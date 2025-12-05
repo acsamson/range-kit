@@ -1,6 +1,6 @@
 import { Storage, SerializedSelection, SelectionStats, StorageConfig, StorageFactoryConfig } from '../types';
 import { StorageFactory } from '../storage/storage-factory';
-import { logSuccess, logError, logInfo } from '../debug/logger';
+import { logSuccess, logError } from '../debug/logger';
 
 export interface StorageOptions {
   storage?: StorageConfig | StorageFactoryConfig;
@@ -166,24 +166,6 @@ export class SelectionStorage {
       throw new Error('当前存储实现不支持数据导入');
     } catch (error) {
       logError('storage', '导入数据时发生错误', error);
-      throw error;
-    }
-  }
-
-  /**
-   * 清理过期数据（内存存储不支持，保留接口兼容性）
-   */
-  async cleanupOldData(maxAgeInDays: number = 30): Promise<number> {
-    try {
-      if (this.storage.cleanupOldData) {
-        const deletedCount = await this.storage.cleanupOldData(maxAgeInDays);
-        logSuccess('storage', `清理了 ${deletedCount} 条过期数据`);
-        return deletedCount;
-      }
-      logInfo('storage', '当前存储实现不支持自动清理，跳过操作');
-      return 0;
-    } catch (error) {
-      logError('storage', '清理过期数据时发生错误', error);
       throw error;
     }
   }

@@ -8,6 +8,7 @@ import type { SerializedSelection, SerializedSelectionSimple } from '../types';
 /**
  * 将完整选区数据转换为精简版本
  * 只保留恢复算法需要的核心字段，适合传给后端保存
+ * 精简版本不包含 runtime 字段
  *
  * @param selection - 完整的选区数据
  * @returns 精简的选区数据
@@ -16,11 +17,7 @@ export const convertToSimple = (selection: SerializedSelection): SerializedSelec
   id: selection.id,
   text: selection.text,
   type: selection.type,
-  anchors: selection.anchors,
-  paths: selection.paths,
-  multipleAnchors: selection.multipleAnchors,
-  structuralFingerprint: selection.structuralFingerprint,
-  textContext: selection.textContext
+  restore: selection.restore,
 });
 
 /**

@@ -246,14 +246,6 @@ export class SelectionRestore implements SelectionRestoreAPI {
     return StorageAPI.importData(this.getStorageAPIDeps(), jsonData);
   }
 
-  async cleanupOldData(maxAgeInDays: number = 30): Promise<number> {
-    return StorageAPI.cleanupOldData(this.getStorageAPIDeps(), maxAgeInDays);
-  }
-
-  async getCurrentPageStats(): Promise<SelectionStats> {
-    return StorageAPI.getCurrentPageStats(this.getStorageAPIDeps());
-  }
-
   // ========== 批量操作 API 方法 ==========
 
   async highlightSelections(

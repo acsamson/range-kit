@@ -54,7 +54,6 @@ export class SelectionInstanceImpl implements SelectionInstance {
     const oldType = this.type;
     this.type = type;
     this.data.type = type;
-    this.data.lastUpdated = Date.now();
 
     // 重新应用样式
     this.rehighlight();
@@ -67,7 +66,7 @@ export class SelectionInstanceImpl implements SelectionInstance {
    * @param updates - 要更新的字段
    */
   updateData(updates: Partial<SerializedSelection>): void {
-    this.data = { ...this.data, ...updates, lastUpdated: Date.now() };
+    this.data = { ...this.data, ...updates };
   }
 
   /**

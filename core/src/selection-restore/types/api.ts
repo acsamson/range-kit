@@ -144,14 +144,10 @@ export interface SelectionRestoreAPI {
   highlightAllSelectionsScrollToLast(): Promise<{ success: number; total: number; errors: string[] }>;
   /** 批量高亮所有选区（滚动到中间） */
   highlightAllSelectionsScrollToMiddle(): Promise<{ success: number; total: number; errors: string[] }>;
-  /** 获取当前页面统计信息 */
-  getCurrentPageStats(): Promise<SelectionStats>;
   /** 导出所有选区数据为 JSON 字符串 */
   exportData(): Promise<string>;
   /** 从 JSON 字符串导入选区数据 */
   importData(jsonData: string): Promise<number>;
-  /** 清理指定天数前的旧数据 */
-  cleanupOldData(maxAgeInDays?: number): Promise<number>;
   /** 设置配置选项 */
   setOptions(options: Partial<SelectionRestoreOptions>): void;
   /** 获取当前配置选项 */

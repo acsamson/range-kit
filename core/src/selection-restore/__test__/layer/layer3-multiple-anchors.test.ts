@@ -15,7 +15,7 @@
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { restoreByMultipleAnchors } from '../../restorer/layers/layer3-multiple-anchors';
-import { SerializedSelection, RestoreStatus, LayerRestoreResult } from '../../types';
+import { SerializedSelection, LayerRestoreResult } from '../../types';
 
 describe('Layer 3: 多重锚点恢复算法', () => {
   describe('🆕 根节点限定功能测试', () => {
@@ -35,31 +35,24 @@ describe('Layer 3: 多重锚点恢复算法', () => {
       const selectionData: SerializedSelection = {
         id: 'test-l3-root-limited',
         text: targetText,
-        timestamp: Date.now(),
-        anchors: { startId: '', endId: '', startOffset: 0, endOffset: 0 },
-        paths: { startPath: '', endPath: '', startOffset: 0, endOffset: 0, startTextOffset: 0, endTextOffset: 0 },
-        multipleAnchors: {
-          startAnchors: { tagName: 'h3', className: 'l3-test-heading', id: '', attributes: {} },
-          endAnchors: { tagName: 'p', className: 'l3-test-content', id: '', attributes: {} },
-          commonParent: 'article.l3-test-article',
-          siblingInfo: null,
+        restore: {
+          anchors: { startId: '', endId: '', startOffset: 0, endOffset: 0 },
+          paths: { startPath: '', endPath: '', startOffset: 0, endOffset: 0, startTextOffset: 0, endTextOffset: 0 },
+          multipleAnchors: {
+            startAnchors: { tagName: 'h3', className: 'l3-test-heading', id: '', attributes: {} },
+            endAnchors: { tagName: 'p', className: 'l3-test-content', id: '', attributes: {} },
+            commonParent: 'article.l3-test-article',
+            siblingInfo: null,
+          },
+          fingerprint: {
+            tagName: 'h3', className: 'l3-test-heading', attributes: {}, textLength: 0,
+            childCount: 0, depth: 0, parentChain: [], siblingPattern: null,
+          },
+          context: {
+            precedingText: '', followingText: '', parentText: '',
+            textPosition: { start: 0, end: 0, totalLength: 0 },
+          },
         },
-        structuralFingerprint: {
-          tagName: 'h3', className: 'l3-test-heading', attributes: {}, textLength: 0,
-          childCount: 0, depth: 0, parentChain: [], siblingPattern: null,
-        },
-        textContext: {
-          precedingText: '', followingText: '', parentText: '',
-          textPosition: { start: 0, end: 0, totalLength: 0 },
-        },
-        metadata: {
-          url: 'http://localhost:3000/', title: 'Test',
-          selectionBounds: { x: 0, y: 0, width: 100, height: 20, top: 0, right: 100, bottom: 20, left: 0, toJSON: () => ({}) } as DOMRect,
-          viewport: { width: 1920, height: 1080 }, userAgent: 'test-agent',
-        },
-        selectionContent: { text: targetText, mediaElements: [] },
-        restoreStatus: 'pending' as any, appName: 'Test App',
-        appUrl: 'http://localhost:3000/', contentHash: 'test',
       };
 
       // 使用根节点限定
@@ -97,31 +90,24 @@ describe('Layer 3: 多重锚点恢复算法', () => {
       const selectionData: SerializedSelection = {
         id: 'test-l3-nonexistent-root',
         text: targetText,
-        timestamp: Date.now(),
-        anchors: { startId: '', endId: '', startOffset: 0, endOffset: 0 },
-        paths: { startPath: '', endPath: '', startOffset: 0, endOffset: 0, startTextOffset: 0, endTextOffset: 0 },
-        multipleAnchors: {
-          startAnchors: { tagName: 'p', className: '', id: '', attributes: {} },
-          endAnchors: { tagName: 'p', className: '', id: '', attributes: {} },
-          commonParent: 'div',
-          siblingInfo: null,
+        restore: {
+          anchors: { startId: '', endId: '', startOffset: 0, endOffset: 0 },
+          paths: { startPath: '', endPath: '', startOffset: 0, endOffset: 0, startTextOffset: 0, endTextOffset: 0 },
+          multipleAnchors: {
+            startAnchors: { tagName: 'p', className: '', id: '', attributes: {} },
+            endAnchors: { tagName: 'p', className: '', id: '', attributes: {} },
+            commonParent: 'div',
+            siblingInfo: null,
+          },
+          fingerprint: {
+            tagName: 'p', className: '', attributes: {}, textLength: targetText.length,
+            childCount: 0, depth: 0, parentChain: [], siblingPattern: null,
+          },
+          context: {
+            precedingText: '', followingText: '', parentText: '',
+            textPosition: { start: 0, end: 0, totalLength: 0 },
+          },
         },
-        structuralFingerprint: {
-          tagName: 'p', className: '', attributes: {}, textLength: targetText.length,
-          childCount: 0, depth: 0, parentChain: [], siblingPattern: null,
-        },
-        textContext: {
-          precedingText: '', followingText: '', parentText: '',
-          textPosition: { start: 0, end: 0, totalLength: 0 },
-        },
-        metadata: {
-          url: 'http://localhost:3000/', title: 'Test',
-          selectionBounds: { x: 0, y: 0, width: 100, height: 20, top: 0, right: 100, bottom: 20, left: 0, toJSON: () => ({}) } as DOMRect,
-          viewport: { width: 1920, height: 1080 }, userAgent: 'test-agent',
-        },
-        selectionContent: { text: targetText, mediaElements: [] },
-        restoreStatus: 'pending' as any, appName: 'Test App',
-        appUrl: 'http://localhost:3000/', contentHash: 'test',
       };
 
       // 使用不存在的根节点ID
@@ -167,74 +153,60 @@ describe('Layer 3: 多重锚点恢复算法', () => {
   function createMockData(text: string, startTag: string, endTag: string, startClass = '', endClass = '', startId = '', endId = ''): SerializedSelection {
     return {
       id: 'test_' + Date.now(),
-      timestamp: Date.now(),
       text,
-      anchors: {
-        startId: '',
-        endId: '',
-        startOffset: 0,
-        endOffset: 0,
-      },
-      paths: {
-        startPath: '',
-        endPath: '',
-        startOffset: 0,
-        endOffset: 0,
-        startTextOffset: 0,
-        endTextOffset: 0,
-      },
-      multipleAnchors: {
-        startAnchors: {
+      restore: {
+        anchors: {
+          startId: '',
+          endId: '',
+          startOffset: 0,
+          endOffset: 0,
+        },
+        paths: {
+          startPath: '',
+          endPath: '',
+          startOffset: 0,
+          endOffset: 0,
+          startTextOffset: 0,
+          endTextOffset: 0,
+        },
+        multipleAnchors: {
+          startAnchors: {
+            tagName: startTag,
+            className: startClass,
+            id: startId,
+            attributes: {},
+          },
+          endAnchors: {
+            tagName: endTag,
+            className: endClass,
+            id: endId,
+            attributes: {},
+          },
+          commonParent: '',
+          siblingInfo: null,
+        },
+        fingerprint: {
           tagName: startTag,
           className: startClass,
-          id: startId,
           attributes: {},
+          textLength: text.length,
+          childCount: 0,
+          depth: 5,
+          parentChain: [],
+          siblingPattern: {
+            position: 0,
+            total: 1,
+            beforeTags: [],
+            afterTags: [],
+          },
         },
-        endAnchors: {
-          tagName: endTag,
-          className: endClass,
-          id: endId,
-          attributes: {},
-        },
-        commonParent: '',
-        siblingInfo: null,
-      },
-      structuralFingerprint: {
-        tagName: startTag,
-        className: startClass,
-        attributes: {},
-        textLength: text.length,
-        childCount: 0,
-        depth: 5,
-        parentChain: [],
-        siblingPattern: {
-          position: 0,
-          total: 1,
-          beforeTags: [],
-          afterTags: [],
+        context: {
+          precedingText: '',
+          followingText: '',
+          parentText: text,
+          textPosition: { start: 0, end: text.length, totalLength: text.length },
         },
       },
-      textContext: {
-        precedingText: '',
-        followingText: '',
-        parentText: text,
-        textPosition: { start: 0, end: text.length, totalLength: text.length },
-      },
-      metadata: {
-        url: 'http://localhost:3000',
-        title: 'Test',
-        selectionBounds: { x: 0, y: 0, width: 100, height: 20, top: 0, right: 100, bottom: 20, left: 0, toJSON: () => ({}) },
-        viewport: { width: 1024, height: 768 },
-        userAgent: 'test',
-      },
-      selectionContent: {
-        text,
-        mediaElements: [],
-      },
-      appName: 'Test App',
-      appUrl: 'http://localhost:3000',
-      contentHash: 'test123',
-      restoreStatus: RestoreStatus.SUCCESS,
     };
   }
 

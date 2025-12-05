@@ -169,21 +169,3 @@ export async function importData(
   return await deps.storage.importData(jsonData);
 }
 
-/**
- * 清理旧数据
- */
-export async function cleanupOldData(
-  deps: StorageAPIDependencies,
-  maxAgeInDays: number = 30,
-): Promise<number> {
-  return await deps.storage.cleanupOldData(maxAgeInDays);
-}
-
-/**
- * 获取当前页面统计信息
- */
-export async function getCurrentPageStats(
-  deps: StorageAPIDependencies,
-): Promise<SelectionStats> {
-  return await deps.storage.getStats();
-}

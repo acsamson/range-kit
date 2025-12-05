@@ -1,4 +1,4 @@
-import { Storage, SerializedSelection, SelectionStats, RestoreStatus, APIStorageHandlers } from '../types';
+import { Storage, SerializedSelection, SelectionStats, APIStorageHandlers } from '../types';
 
 /**
  * API存储实现
@@ -74,82 +74,6 @@ export class APIStorage implements Storage {
   }
 
   /**
-   * 更新恢复状态
-   */
-  async updateRestoreStatus(key: string, status: RestoreStatus): Promise<void> {
-    if (!this.handlers.updateRestoreStatus) {
-      // 默认实现：获取数据并重新保存
-      const data = await this.get(key);
-      if (data) {
-        data.restoreStatus = status;
-        data.lastUpdated = Date.now();
-        await this.save(key, data);
-      }
-      return;
-    }
-    return this.handlers.updateRestoreStatus(key, status);
-  }
-
-  /**
-   * 根据URL获取选区
-   */
-  async getByUrl(url: string): Promise<SerializedSelection[]> {
-    if (!this.handlers.getByUrl) {
-      // 默认实现：获取所有数据并过滤
-      const allSelections = await this.getAll();
-      return allSelections.filter(selection => selection.appUrl === url);
-    }
-    return this.handlers.getByUrl(url);
-  }
-
-  /**
-   * 根据内容哈希获取选区
-   */
-  async getByContentHash(contentHash: string): Promise<SerializedSelection[]> {
-    if (!this.handlers.getByContentHash) {
-      // 默认实现：获取所有数据并过滤
-      const allSelections = await this.getAll();
-      return allSelections.filter(selection => selection.contentHash === contentHash);
-    }
-    return this.handlers.getByContentHash(contentHash);
-  }
-
-  /**
-   * 获取当前页面统计
-   */
-  async getCurrentPageStats(): Promise<SelectionStats> {
-    if (!this.handlers.getCurrentPageStats) {
-      // 默认实现：根据当前URL获取选区并计算统计
-      const currentUrl = window.location.href;
-      const selections = await this.getByUrl(currentUrl);
-      return this.calculateStats(selections);
-    }
-    return this.handlers.getCurrentPageStats();
-  }
-
-  /**
-   * 清理旧数据
-   */
-  async cleanupOldData(maxAgeInDays: number = 30): Promise<number> {
-    if (!this.handlers.cleanupOldData) {
-      // 默认实现：获取所有数据，删除过期的数据
-      const allSelections = await this.getAll();
-      const cutoffTime = Date.now() - (maxAgeInDays * 24 * 60 * 60 * 1000);
-      let deletedCount = 0;
-
-      for (const selection of allSelections) {
-        if (selection.timestamp && selection.timestamp < cutoffTime) {
-          await this.delete(selection.id);
-          deletedCount++;
-        }
-      }
-
-      return deletedCount;
-    }
-    return this.handlers.cleanupOldData(maxAgeInDays);
-  }
-
-  /**
    * 导出数据
    */
   async exportData(): Promise<string> {
@@ -193,17 +117,20 @@ export class APIStorage implements Storage {
 
   /**
    * 计算统计信息的辅助方法
+   * 注意：使用 runtime 中的状态进行统计
    */
   private calculateStats(selections: SerializedSelection[]): SelectionStats {
     const totalSaved = selections.length;
-    const successfulRestores = selections.filter(s => s.restoreStatus === RestoreStatus.SUCCESS).length;
-    const failedRestores = selections.filter(s => s.restoreStatus === RestoreStatus.FAILED).length;
-    const successRate = totalSaved > 0 ? (successfulRestores / totalSaved) * 100 : 0;
+    const successfulRestores = selections.filter(s => s.runtime?.restoreStatus === 'success').length;
+    const failedRestores = selections.filter(s => s.runtime?.restoreStatus === 'failed').length;
+    const successRate = totalSaved > 0 && (successfulRestores + failedRestores) > 0
+      ? (successfulRestores / (successfulRestores + failedRestores)) * 100
+      : 0;
 
     // 计算各层级统计
     const layerStats = [1, 2, 3, 4].map(layer => {
-      const layerSelections = selections.filter(s => s.successLayer === layer);
-      const layerSuccesses = layerSelections.filter(s => s.restoreStatus === RestoreStatus.SUCCESS).length;
+      const layerSelections = selections.filter(s => s.runtime?.successLayer === layer);
+      const layerSuccesses = layerSelections.filter(s => s.runtime?.restoreStatus === 'success').length;
       const layerAttempts = layerSelections.length;
       const layerSuccessRate = layerAttempts > 0 ? (layerSuccesses / layerAttempts) * 100 : 0;
 

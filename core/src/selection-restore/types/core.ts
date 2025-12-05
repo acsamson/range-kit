@@ -147,50 +147,34 @@ export interface TextContext {
   textPosition: TextPosition;
 }
 
-// 多媒体元素信息
-export interface MediaInfo {
-  /** 媒体类型 */
-  type: 'image' | 'video' | 'audio' | 'iframe' | 'video-source' | 'audio-source';
-  /** 媒体源地址 */
-  src: string;
-  /** 替代文本（主要用于图片） */
-  alt?: string;
-  /** 媒体标题 */
-  title?: string;
-  /** 其他属性 */
-  attributes?: Record<string, string>;
+// ========== 新的分层结构 ==========
+
+/**
+ * 恢复算法数据
+ * 包含 L1-L4 所有恢复算法需要的核心数据
+ */
+export interface RestoreData {
+  /** L1: ID锚点信息 */
+  anchors: AnchorInfo;
+  /** L2: 路径信息 */
+  paths: PathInfo;
+  /** L3: 多重锚点信息 */
+  multipleAnchors: MultipleAnchorInfo;
+  /** L4: 结构指纹信息 */
+  fingerprint: StructuralFingerprint;
+  /** L4辅助: 文本上下文信息 */
+  context: TextContext;
 }
 
-// 选区内容信息（包含文本和多媒体）
-export interface SelectionContent {
-  /** 文本内容 */
-  text: string;
-  /** 多媒体元素信息 */
-  mediaElements: MediaInfo[];
-  /** HTML结构摘要 */
-  htmlStructure?: string;
-}
-
-// 视口信息
-export interface ViewportInfo {
-  /** 宽度 */
-  width: number;
-  /** 高度 */
-  height: number;
-}
-
-// 元数据信息
-export interface MetadataInfo {
-  /** 页面URL */
-  url: string;
-  /** 页面标题 */
-  title: string;
-  /** 选区边界信息 */
-  selectionBounds: DOMRect;
-  /** 视口信息 */
-  viewport: ViewportInfo;
-  /** 用户代理 */
-  userAgent: string;
+/**
+ * 运行时状态数据
+ * 前端使用，不需要存储到后端
+ */
+export interface RuntimeData {
+  /** 恢复状态 */
+  restoreStatus: RestoreStatus;
+  /** 成功恢复时命中的算法层级 (1-4) */
+  successLayer: number;
 }
 
 // 恢复状态枚举
@@ -211,57 +195,28 @@ export type SelectionType = string;
 // 内置的默认类型
 export const DEFAULT_SELECTION_TYPE = 'default';
 
-// 序列化选区数据结构（完整版，包含所有信息）
+/**
+ * 序列化选区数据结构
+ * 采用分层设计，清晰区分业务标识、恢复数据和运行时状态
+ */
 export interface SerializedSelection {
   /** 唯一标识符 */
   id: string;
   /** 选中的文本 */
   text: string;
-  /** ID锚点信息 */
-  anchors: AnchorInfo;
-  /** 路径信息 */
-  paths: PathInfo;
-  /** 多重锚点信息 */
-  multipleAnchors: MultipleAnchorInfo;
-  /** 结构指纹信息 */
-  structuralFingerprint: StructuralFingerprint;
-  /** 文本上下文信息 */
-  textContext: TextContext;
-  /** 创建时间戳 */
-  timestamp?: number;
-  /** 选区内容信息（包含多媒体） */
-  selectionContent?: SelectionContent;
-  /** 元数据信息 */
-  metadata?: MetadataInfo;
-  /** 恢复状态 */
-  restoreStatus?: RestoreStatus;
-  /** 成功恢复时命中的算法层级 (1-4) */
-  successLayer?: number;
-  /** 成功恢复时命中的算法层级名称 */
-  successLayerName?: string;
-  /** 所属应用名称 */
-  appName?: string;
-  /** 应用URL（页面URL） */
-  appUrl?: string;
-  /** 选区内容哈希（用于去重） */
-  contentHash?: string;
   /** 选区类型 */
   type?: SelectionType;
-  /** 最后更新时间戳 */
-  lastUpdated?: number;
+  /** 恢复算法数据 */
+  restore: RestoreData;
+  /** 运行时状态（前端用，不存后端） */
+  runtime?: RuntimeData;
 }
 
-// 精简选区数据结构（用于后端保存）- 只包含恢复算法需要的核心字段
-export type SerializedSelectionSimple = Pick<SerializedSelection,
-  | 'id'
-  | 'text'
-  | 'type'
-  | 'anchors'
-  | 'paths'
-  | 'multipleAnchors'
-  | 'structuralFingerprint'
-  | 'textContext'
->
+/**
+ * 精简选区数据结构（用于后端保存）
+ * 只包含恢复算法需要的核心字段
+ */
+export type SerializedSelectionSimple = Pick<SerializedSelection, 'id' | 'text' | 'type' | 'restore'>
 
 // 重叠选区信息
 export interface OverlappedRange {

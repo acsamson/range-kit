@@ -38,33 +38,26 @@ describe('Layer 4: 结构指纹恢复算法', () => {
       const selectionData: SerializedSelection = {
         id: 'test-l4-root-limited',
         text: targetText,
-        timestamp: Date.now(),
-        anchors: { startId: '', endId: '', startOffset: 0, endOffset: 0 },
-        paths: { startPath: '', endPath: '', startOffset: 0, endOffset: 0, startTextOffset: 0, endTextOffset: 0 },
-        multipleAnchors: {
-          startAnchors: { tagName: '', className: '', id: '', attributes: {} },
-          endAnchors: { tagName: '', className: '', id: '', attributes: {} },
-          commonParent: '', siblingInfo: null,
+        restore: {
+          anchors: { startId: '', endId: '', startOffset: 0, endOffset: 0 },
+          paths: { startPath: '', endPath: '', startOffset: 0, endOffset: 0, startTextOffset: 0, endTextOffset: 0 },
+          multipleAnchors: {
+            startAnchors: { tagName: '', className: '', id: '', attributes: {} },
+            endAnchors: { tagName: '', className: '', id: '', attributes: {} },
+            commonParent: '', siblingInfo: null,
+          },
+          fingerprint: {
+            tagName: 'p', className: 'l4-test-paragraph', attributes: {}, textLength: targetText.length,
+            childCount: 0, depth: 3, parentChain: [
+              { tagName: 'div', className: 'l4-test-container', id: '' },
+              { tagName: 'div', className: '', id: 'l4-specific-root' },
+            ], siblingPattern: null,
+          },
+          context: {
+            precedingText: '', followingText: '', parentText: '',
+            textPosition: { start: 0, end: 0, totalLength: 0 },
+          },
         },
-        structuralFingerprint: {
-          tagName: 'p', className: 'l4-test-paragraph', attributes: {}, textLength: targetText.length,
-          childCount: 0, depth: 3, parentChain: [
-            { tagName: 'div', className: 'l4-test-container', id: '' },
-            { tagName: 'div', className: '', id: 'l4-specific-root' },
-          ], siblingPattern: null,
-        },
-        textContext: {
-          precedingText: '', followingText: '', parentText: '',
-          textPosition: { start: 0, end: 0, totalLength: 0 },
-        },
-        metadata: {
-          url: 'http://localhost:3000/', title: 'Test',
-          selectionBounds: { x: 0, y: 0, width: 100, height: 20, top: 0, right: 100, bottom: 20, left: 0, toJSON: () => ({}) } as DOMRect,
-          viewport: { width: 1920, height: 1080 }, userAgent: 'test-agent',
-        },
-        selectionContent: { text: targetText, mediaElements: [] },
-        restoreStatus: 'pending' as any, appName: 'Test App',
-        appUrl: 'http://localhost:3000/', contentHash: 'test',
       };
 
       // 使用根节点限定
@@ -88,33 +81,26 @@ describe('Layer 4: 结构指纹恢复算法', () => {
       const selectionData: SerializedSelection = {
         id: 'test-l4-nonexistent-root',
         text: targetText,
-        timestamp: Date.now(),
-        anchors: { startId: '', endId: '', startOffset: 0, endOffset: 0 },
-        paths: { startPath: '', endPath: '', startOffset: 0, endOffset: 0, startTextOffset: 0, endTextOffset: 0 },
-        multipleAnchors: {
-          startAnchors: { tagName: '', className: '', id: '', attributes: {} },
-          endAnchors: { tagName: '', className: '', id: '', attributes: {} },
-          commonParent: '', siblingInfo: null,
+        restore: {
+          anchors: { startId: '', endId: '', startOffset: 0, endOffset: 0 },
+          paths: { startPath: '', endPath: '', startOffset: 0, endOffset: 0, startTextOffset: 0, endTextOffset: 0 },
+          multipleAnchors: {
+            startAnchors: { tagName: '', className: '', id: '', attributes: {} },
+            endAnchors: { tagName: '', className: '', id: '', attributes: {} },
+            commonParent: '', siblingInfo: null,
+          },
+          fingerprint: {
+            tagName: 'h3', className: 'content-title', attributes: {}, textLength: targetText.length,
+            childCount: 0, depth: 4, parentChain: [
+              { tagName: 'div', className: 'l4-test-content', id: '' },
+              { tagName: 'div', className: 'test-root', id: '' },
+            ], siblingPattern: null,
+          },
+          context: {
+            precedingText: '', followingText: '', parentText: '',
+            textPosition: { start: 0, end: 0, totalLength: 0 },
+          },
         },
-        structuralFingerprint: {
-          tagName: 'h3', className: 'content-title', attributes: {}, textLength: targetText.length,
-          childCount: 0, depth: 4, parentChain: [
-            { tagName: 'div', className: 'l4-test-content', id: '' },
-            { tagName: 'div', className: 'test-root', id: '' },
-          ], siblingPattern: null,
-        },
-        textContext: {
-          precedingText: '', followingText: '', parentText: '',
-          textPosition: { start: 0, end: 0, totalLength: 0 },
-        },
-        metadata: {
-          url: 'http://localhost:3000/', title: 'Test',
-          selectionBounds: { x: 0, y: 0, width: 100, height: 20, top: 0, right: 100, bottom: 20, left: 0, toJSON: () => ({}) } as DOMRect,
-          viewport: { width: 1920, height: 1080 }, userAgent: 'test-agent',
-        },
-        selectionContent: { text: targetText, mediaElements: [] },
-        restoreStatus: 'pending' as any, appName: 'Test App',
-        appUrl: 'http://localhost:3000/', contentHash: 'test',
       };
 
       // 使用不存在的根节点ID
@@ -217,72 +203,57 @@ describe('Layer 4: 结构指纹恢复算法', () => {
   });
 
   // 创建测试数据的辅助函数
-  const createTestSelection = (overrides: Partial<SerializedSelection> = {}): SerializedSelection => ({
-    id: 'test-l4-default',
-    text: '测试文本',
-    timestamp: Date.now(),
-    anchors: {
-      startId: 'root',
-      endId: 'root',
-      startOffset: 0,
-      endOffset: 10,
-    },
-    paths: {
-      startPath: '',
-      endPath: '',
-      startOffset: 0,
-      endOffset: 0,
-      startTextOffset: 0,
-      endTextOffset: 0,
-    },
-    multipleAnchors: {
-      startAnchors: { tagName: 'h3', className: 'content-title', id: '', attributes: {} },
-      endAnchors: { tagName: 'p', className: 'content-text', id: '', attributes: {} },
-      commonParent: '.l4-test-content',
-      siblingInfo: null,
-    },
-    structuralFingerprint: {
-      tagName: 'h3',
-      className: 'content-title',
-      attributes: {},
-      textLength: 20,
-      childCount: 0,
-      depth: 5,
-      parentChain: [
-        { tagName: 'div', className: 'l4-test-content original-structure', id: '' },
-        { tagName: 'div', className: 'test-root', id: '' },
-        { tagName: 'div', className: '', id: '' },
-        { tagName: 'body', className: '', id: '' },
-      ],
-      siblingPattern: { position: 0, total: 2, beforeTags: [], afterTags: ['p'] },
-    },
-    textContext: {
-      precedingText: '',
-      followingText: '',
-      parentText: '🚗 新能源汽车技术突破',
-      textPosition: { start: 0, end: 20, totalLength: 20 },
-    },
-    metadata: {
-      url: 'http://localhost:3000/',
-      title: 'L4 Test',
-      selectionBounds: {
-        x: 0, y: 0, width: 200, height: 40,
-        top: 0, right: 200, bottom: 40, left: 0,
-        toJSON: () => ({}),
-      } as DOMRect,
-      viewport: { width: 1920, height: 1080 },
-      userAgent: 'test-agent',
-    },
-    selectionContent: {
+  const createTestSelection = (overrides: Partial<SerializedSelection> & { fingerprint?: any; context?: any; multipleAnchors?: any } = {}): SerializedSelection => {
+    const { fingerprint: fingerprintOverride, context: contextOverride, multipleAnchors: multipleAnchorsOverride, ...otherOverrides } = overrides;
+    return {
+      id: 'test-l4-default',
       text: '测试文本',
-      mediaElements: [],
-    },
-    restoreStatus: 'pending' as any,
-    appName: 'L4 Test App',
-    appUrl: 'http://localhost:3000/',
-    contentHash: 'l4test',
-    ...overrides,
-  });
+      restore: {
+        anchors: {
+          startId: 'root',
+          endId: 'root',
+          startOffset: 0,
+          endOffset: 10,
+        },
+        paths: {
+          startPath: '',
+          endPath: '',
+          startOffset: 0,
+          endOffset: 0,
+          startTextOffset: 0,
+          endTextOffset: 0,
+        },
+        multipleAnchors: multipleAnchorsOverride || {
+          startAnchors: { tagName: 'h3', className: 'content-title', id: '', attributes: {} },
+          endAnchors: { tagName: 'p', className: 'content-text', id: '', attributes: {} },
+          commonParent: '.l4-test-content',
+          siblingInfo: null,
+        },
+        fingerprint: fingerprintOverride || {
+          tagName: 'h3',
+          className: 'content-title',
+          attributes: {},
+          textLength: 20,
+          childCount: 0,
+          depth: 5,
+          parentChain: [
+            { tagName: 'div', className: 'l4-test-content original-structure', id: '' },
+            { tagName: 'div', className: 'test-root', id: '' },
+            { tagName: 'div', className: '', id: '' },
+            { tagName: 'body', className: '', id: '' },
+          ],
+          siblingPattern: { position: 0, total: 2, beforeTags: [], afterTags: ['p'] },
+        },
+        context: contextOverride || {
+          precedingText: '',
+          followingText: '',
+          parentText: '🚗 新能源汽车技术突破',
+          textPosition: { start: 0, end: 20, totalLength: 20 },
+        },
+      },
+      ...otherOverrides,
+    };
+  };
 
   describe('✅ 基础结构匹配测试', () => {
     it('应该成功恢复原始结构中的单元素选区', () => {
@@ -291,7 +262,7 @@ describe('Layer 4: 结构指纹恢复算法', () => {
       const selectionData = createTestSelection({
         id: 'test-original-structure',
         text: targetText,
-        structuralFingerprint: {
+        fingerprint: {
           tagName: 'h3',
           className: 'content-title',
           attributes: {},
@@ -304,7 +275,7 @@ describe('Layer 4: 结构指纹恢复算法', () => {
           ],
           siblingPattern: { position: 0, total: 2, beforeTags: [], afterTags: ['p'] },
         },
-        textContext: {
+        context: {
           precedingText: '',
           followingText: '',
           parentText: targetText,
@@ -329,7 +300,7 @@ describe('Layer 4: 结构指纹恢复算法', () => {
       const selectionData = createTestSelection({
         id: 'test-class-partial-match',
         text: targetText,
-        structuralFingerprint: {
+        fingerprint: {
           tagName: 'h3',
           className: 'content-title', // 原始类名，不包含extra-class
           attributes: {},
@@ -342,7 +313,7 @@ describe('Layer 4: 结构指纹恢复算法', () => {
           ],
           siblingPattern: { position: 0, total: 2, beforeTags: [], afterTags: ['p'] },
         },
-        textContext: {
+        context: {
           precedingText: '',
           followingText: '',
           parentText: targetText,
@@ -367,7 +338,7 @@ describe('Layer 4: 结构指纹恢复算法', () => {
       const selectionData = createTestSelection({
         id: 'test-semantic-tag-mapping',
         text: targetText,
-        structuralFingerprint: {
+        fingerprint: {
           tagName: 'div', // 实际DOM中是div标签
           className: 'content-title',
           attributes: {},
@@ -380,7 +351,7 @@ describe('Layer 4: 结构指纹恢复算法', () => {
           ],
           siblingPattern: { position: 0, total: 2, beforeTags: [], afterTags: ['section'] },
         },
-        textContext: {
+        context: {
           precedingText: '',
           followingText: '',
           parentText: targetText,
@@ -414,7 +385,7 @@ describe('Layer 4: 结构指纹恢复算法', () => {
           commonParent: '.l4-test-content.original-structure',
           siblingInfo: null,
         },
-        structuralFingerprint: {
+        fingerprint: {
           tagName: 'h3',
           className: 'content-title',
           attributes: {},
@@ -427,7 +398,7 @@ describe('Layer 4: 结构指纹恢复算法', () => {
           ],
           siblingPattern: { position: 0, total: 2, beforeTags: [], afterTags: ['p'] },
         },
-        textContext: {
+        context: {
           precedingText: '',
           followingText: '',
           parentText: targetText,
@@ -458,7 +429,7 @@ describe('Layer 4: 结构指纹恢复算法', () => {
           commonParent: '.l4-test-content.modified-tags',
           siblingInfo: null,
         },
-        structuralFingerprint: {
+        fingerprint: {
           tagName: 'section', // 实际DOM中是section标签
           className: 'content-text',
           attributes: {},
@@ -471,7 +442,7 @@ describe('Layer 4: 结构指纹恢复算法', () => {
           ],
           siblingPattern: { position: 1, total: 2, beforeTags: ['div'], afterTags: [] },
         },
-        textContext: {
+        context: {
           precedingText: '',
           followingText: '',
           parentText: targetText,
@@ -499,7 +470,7 @@ describe('Layer 4: 结构指纹恢复算法', () => {
       const selectionData = createTestSelection({
         id: 'test-similarity-threshold',
         text: targetText,
-        structuralFingerprint: {
+        fingerprint: {
           tagName: 'h3',
           className: 'content-title',
           attributes: {},
@@ -512,7 +483,7 @@ describe('Layer 4: 结构指纹恢复算法', () => {
           ],
           siblingPattern: { position: 0, total: 2, beforeTags: [], afterTags: ['p'] },
         },
-        textContext: {
+        context: {
           precedingText: '',
           followingText: '',
           parentText: targetText,
@@ -537,7 +508,7 @@ describe('Layer 4: 结构指纹恢复算法', () => {
       const selectionData = createTestSelection({
         id: 'test-low-similarity',
         text: targetText,
-        structuralFingerprint: {
+        fingerprint: {
           tagName: 'h3',
           className: 'deep-title', // 类名不同
           attributes: {},
@@ -554,7 +525,7 @@ describe('Layer 4: 结构指纹恢复算法', () => {
           ],
           siblingPattern: { position: 0, total: 2, beforeTags: [], afterTags: ['p'] },
         },
-        textContext: {
+        context: {
           precedingText: '',
           followingText: '',
           parentText: targetText,
@@ -581,7 +552,7 @@ describe('Layer 4: 结构指纹恢复算法', () => {
       const selectionData = createTestSelection({
         id: 'test-parent-chain-similarity',
         text: targetText,
-        structuralFingerprint: {
+        fingerprint: {
           tagName: 'p',
           className: 'deep-content',
           attributes: {},
@@ -598,7 +569,7 @@ describe('Layer 4: 结构指纹恢复算法', () => {
           ],
           siblingPattern: { position: 1, total: 2, beforeTags: ['h3'], afterTags: [] },
         },
-        textContext: {
+        context: {
           precedingText: '',
           followingText: '',
           parentText: targetText,
@@ -622,7 +593,7 @@ describe('Layer 4: 结构指纹恢复算法', () => {
     it('应该处理缺失结构指纹tagName的情况', () => {
       const selectionData = createTestSelection({
         id: 'test-missing-tagname',
-        structuralFingerprint: {
+        fingerprint: {
           tagName: '', // 缺失tagName
           className: 'content-title',
           attributes: {},
@@ -643,7 +614,7 @@ describe('Layer 4: 结构指纹恢复算法', () => {
       const selectionData = createTestSelection({
         id: 'test-no-matching-elements',
         text: '不存在的文本内容',
-        structuralFingerprint: {
+        fingerprint: {
           tagName: 'nonexistent',
           className: 'nonexistent-class',
           attributes: {},
@@ -664,7 +635,7 @@ describe('Layer 4: 结构指纹恢复算法', () => {
       const selectionData = createTestSelection({
         id: 'test-very-low-similarity',
         text: '完全不匹配的文本结构',
-        structuralFingerprint: {
+        fingerprint: {
           tagName: 'h1', // 使用不存在的标签
           className: 'completely-different-class',
           attributes: {},
@@ -693,7 +664,7 @@ describe('Layer 4: 结构指纹恢复算法', () => {
           commonParent: '.l4-test-content.original-structure',
           siblingInfo: null,
         },
-        structuralFingerprint: {
+        fingerprint: {
           tagName: 'h3',
           className: 'content-title',
           attributes: {},
@@ -721,7 +692,7 @@ describe('Layer 4: 结构指纹恢复算法', () => {
       const selectionData = createTestSelection({
         id: 'test-performance',
         text: '🚗 新能源汽车技术突破',
-        structuralFingerprint: {
+        fingerprint: {
           tagName: 'h3',
           className: 'content-title',
           attributes: {},
@@ -749,7 +720,7 @@ describe('Layer 4: 结构指纹恢复算法', () => {
       const selectionData = createTestSelection({
         id: 'test-candidate-limit',
         text: '🚗 新能源汽车技术突破',
-        structuralFingerprint: {
+        fingerprint: {
           tagName: 'h3',
           className: 'content-title',
           attributes: {},
@@ -780,7 +751,7 @@ describe('Layer 4: 结构指纹恢复算法', () => {
       const selectionData = createTestSelection({
         id: 'test-container-config',
         text: '🚗 新能源汽车技术突破',
-        structuralFingerprint: {
+        fingerprint: {
           tagName: 'h3',
           className: 'content-title',
           attributes: {},
@@ -812,7 +783,7 @@ describe('Layer 4: 结构指纹恢复算法', () => {
           commonParent: '.test-root',
           siblingInfo: null,
         },
-        structuralFingerprint: {
+        fingerprint: {
           tagName: 'div',
           className: '',
           attributes: {},
@@ -824,7 +795,7 @@ describe('Layer 4: 结构指纹恢复算法', () => {
           ],
           siblingPattern: { position: 0, total: 3, beforeTags: [], afterTags: ['div', 'div'] },
         },
-        textContext: {
+        context: {
           precedingText: '📰 ',
           followingText: '',
           parentText: '📰 核心测试区域 - 跨元素选区测试',
@@ -864,7 +835,7 @@ describe('Layer 4: 结构指纹恢复算法', () => {
           commonParent: '.cross-element-test',
           siblingInfo: null,
         },
-        structuralFingerprint: {
+        fingerprint: {
           tagName: 'section',
           className: '',
           attributes: {},
@@ -877,7 +848,7 @@ describe('Layer 4: 结构指纹恢复算法', () => {
           ],
           siblingPattern: { position: 0, total: 2, beforeTags: [], afterTags: ['aside'] },
         },
-        textContext: {
+        context: {
           precedingText: '',
           followingText: '',
           parentText: '🚗 新能源汽车技术突破',
@@ -907,7 +878,7 @@ describe('Layer 4: 结构指纹恢复算法', () => {
       const selectionData = createTestSelection({
         id: 'test-class-contains-match',
         text: targetText,
-        structuralFingerprint: {
+        fingerprint: {
           tagName: 'p',
           className: 'content-text', // 只包含部分类名
           attributes: {},
@@ -919,7 +890,7 @@ describe('Layer 4: 结构指纹恢复算法', () => {
           ],
           siblingPattern: { position: 6, total: 7, beforeTags: [], afterTags: [] },
         },
-        textContext: {
+        context: {
           precedingText: '',
           followingText: '',
           parentText: targetText,

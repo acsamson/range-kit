@@ -1,4 +1,4 @@
-import { Storage, SerializedSelection, SelectionStats, RestoreStatus } from '../types';
+import { Storage, SerializedSelection, SelectionStats } from '../types';
 
 /**
  * 内存存储实现
@@ -31,32 +31,6 @@ export class MemoryStorage implements Storage {
   }
 
   /**
-   * 根据URL获取选区
-   */
-  async getByUrl(url: string): Promise<SerializedSelection[]> {
-    const results: SerializedSelection[] = [];
-    for (const selection of this.data.values()) {
-      if (selection.metadata?.url === url) {
-        results.push({ ...selection });
-      }
-    }
-    return results;
-  }
-
-  /**
-   * 根据内容哈希查找选区
-   */
-  async getByContentHash(contentHash: string): Promise<SerializedSelection[]> {
-    const results: SerializedSelection[] = [];
-    for (const selection of this.data.values()) {
-      if (selection.contentHash === contentHash) {
-        results.push({ ...selection });
-      }
-    }
-    return results;
-  }
-
-  /**
    * 删除选区数据
    */
   async delete(key: string): Promise<void> {
@@ -71,67 +45,26 @@ export class MemoryStorage implements Storage {
   }
 
   /**
-   * 更新选区的恢复状态
-   */
-  async updateRestoreStatus(key: string, status: RestoreStatus): Promise<void> {
-    const selection = this.data.get(key);
-    if (selection) {
-      selection.restoreStatus = status;
-      this.data.set(key, selection);
-    }
-  }
-
-  /**
    * 获取统计信息
+   * 注意：由于 runtime 数据不持久化，统计信息需要依赖外部记录
    */
   async getStats(): Promise<SelectionStats> {
     const allSelections = Array.from(this.data.values());
 
     const totalSaved = allSelections.length;
-    const successfulRestores = allSelections.filter(s => s.restoreStatus === RestoreStatus.SUCCESS).length;
-    const failedRestores = allSelections.filter(s => s.restoreStatus === RestoreStatus.FAILED).length;
-    const successRate = totalSaved > 0 ? (successfulRestores / (successfulRestores + failedRestores)) * 100 : 0;
+    // runtime 数据可选，统计成功/失败需要外部系统支持
+    const successfulRestores = allSelections.filter(s => s.runtime?.restoreStatus === 'success').length;
+    const failedRestores = allSelections.filter(s => s.runtime?.restoreStatus === 'failed').length;
+    const successRate = totalSaved > 0 && (successfulRestores + failedRestores) > 0
+      ? (successfulRestores / (successfulRestores + failedRestores)) * 100
+      : 0;
 
-    // 计算各层级统计（这里需要额外的恢复记录来统计）
+    // 层级统计（需要额外的恢复记录来统计）
     const layerStats = [
       { layer: 1, name: 'ID锚点', successes: 0, attempts: 0, successRate: 0 },
       { layer: 2, name: '原始路径', successes: 0, attempts: 0, successRate: 0 },
       { layer: 3, name: '多重锚点', successes: 0, attempts: 0, successRate: 0 },
       { layer: 4, name: '结构指纹', successes: 0, attempts: 0, successRate: 0 },
-      { layer: 5, name: '降级恢复', successes: 0, attempts: 0, successRate: 0 },
-    ];
-
-    return {
-      totalSaved,
-      successfulRestores,
-      failedRestores,
-      successRate: Math.round(successRate),
-      layerStats,
-    };
-  }
-
-  /**
-   * 获取当前页面的选区统计
-   */
-  async getCurrentPageStats(): Promise<SelectionStats> {
-    if (typeof window === 'undefined') {
-      return this.getStats();
-    }
-
-    const currentUrl = window.location.href;
-    const pageSelections = await this.getByUrl(currentUrl);
-
-    const totalSaved = pageSelections.length;
-    const successfulRestores = pageSelections.filter(s => s.restoreStatus === RestoreStatus.SUCCESS).length;
-    const failedRestores = pageSelections.filter(s => s.restoreStatus === RestoreStatus.FAILED).length;
-    const successRate = totalSaved > 0 ? (successfulRestores / (successfulRestores + failedRestores)) * 100 : 0;
-
-    const layerStats = [
-      { layer: 1, name: 'ID锚点', successes: 0, attempts: 0, successRate: 0 },
-      { layer: 2, name: '原始路径', successes: 0, attempts: 0, successRate: 0 },
-      { layer: 3, name: '多重锚点', successes: 0, attempts: 0, successRate: 0 },
-      { layer: 4, name: '结构指纹', successes: 0, attempts: 0, successRate: 0 },
-      { layer: 5, name: '降级恢复', successes: 0, attempts: 0, successRate: 0 },
     ];
 
     return {

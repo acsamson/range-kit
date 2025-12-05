@@ -43,16 +43,6 @@ export interface Storage {
   clear(): Promise<void>;
   /** 获取统计信息 */
   getStats(): Promise<SelectionStats>;
-  /** 更新恢复状态 */
-  updateRestoreStatus?(key: string, status: RestoreStatus): Promise<void>;
-  /** 根据URL获取选区 */
-  getByUrl?(url: string): Promise<SerializedSelection[]>;
-  /** 根据内容哈希获取选区 */
-  getByContentHash?(contentHash: string): Promise<SerializedSelection[]>;
-  /** 获取当前页面统计 */
-  getCurrentPageStats?(): Promise<SelectionStats>;
-  /** 清理旧数据 */
-  cleanupOldData?(maxAgeInDays: number): Promise<number>;
   /** 导出数据 */
   exportData?(): Promise<string>;
   /** 导入数据 */

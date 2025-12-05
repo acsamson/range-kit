@@ -31,7 +31,6 @@ export {
   type PathInfo,
   type MultipleAnchorInfo,
   type TextContext,
-  type SelectionContent,
   type SerializedSelectionSimple,
   type StructuralFingerprint as SelectionStructuralFingerprint,
   type HighlightStyle as SelectionHighlightStyle,

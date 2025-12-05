@@ -9,7 +9,8 @@ import { applySelectionWithStrictValidation } from '../utils';
 import { logDebug, logWarn, logError, logSuccess } from '../../debug/logger';
 
 export function restoreByIdAnchors(data: SerializedSelection, containerConfig?: ContainerConfig): LayerRestoreResult {
-  const { anchors, text } = data;
+  const { restore, text } = data;
+  const { anchors } = restore;
 
   // 记录容器配置状态
   if (containerConfig) {

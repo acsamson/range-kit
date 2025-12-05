@@ -35,7 +35,8 @@ export function restoreByStructuralFingerprint(
   data: SerializedSelection,
   containerConfig?: ContainerConfig,
 ): LayerRestoreResult {
-  const { structuralFingerprint, text } = data;
+  const { restore, text } = data;
+  const { fingerprint: structuralFingerprint } = restore;
 
   // 记录容器配置状态
   if (containerConfig) {
@@ -119,11 +120,12 @@ function prioritizeCrossElementCandidates(
   candidates: StructureCandidate[],
   data: SerializedSelection,
 ): StructureCandidate[] {
-  if (!data.multipleAnchors?.startAnchors?.tagName || !data.multipleAnchors?.endAnchors?.tagName) {
+  const { multipleAnchors } = data.restore;
+  if (!multipleAnchors?.startAnchors?.tagName || !multipleAnchors?.endAnchors?.tagName) {
     return candidates;
   }
 
-  const startTag = data.multipleAnchors.startAnchors.tagName.toLowerCase();
+  const startTag = multipleAnchors.startAnchors.tagName.toLowerCase();
   const crossElementCandidates = candidates.filter(
     c => c.element.tagName.toLowerCase() === startTag,
   );
@@ -151,10 +153,11 @@ function tryStructuralTextMatching(
   text: string,
   data: SerializedSelection,
 ): LayerRestoreResult {
+  const { multipleAnchors, context: textContext } = data.restore;
   // 优先检查是否为跨元素选区
-  if (data.multipleAnchors?.startAnchors && data.multipleAnchors?.endAnchors) {
-    const startTag = data.multipleAnchors.startAnchors.tagName.toLowerCase();
-    const endTag = data.multipleAnchors.endAnchors.tagName.toLowerCase();
+  if (multipleAnchors?.startAnchors && multipleAnchors?.endAnchors) {
+    const startTag = multipleAnchors.startAnchors.tagName.toLowerCase();
+    const endTag = multipleAnchors.endAnchors.tagName.toLowerCase();
     const elementTag = element.tagName.toLowerCase();
 
     // 如果当前元素是起始元素，且起始和结束标签不同，说明可能是跨元素选区
@@ -166,8 +169,8 @@ function tryStructuralTextMatching(
       let matchReason = '';
 
       // 策略1: 检查textContext中的父文本匹配（最准确）
-      if (data.textContext?.parentText) {
-        const parentText = data.textContext.parentText.trim();
+      if (textContext?.parentText) {
+        const parentText = textContext.parentText.trim();
         if (parentText && elementText.includes(parentText)) {
           textInElement = true;
           matchReason = '父文本上下文精确匹配';
@@ -192,7 +195,7 @@ function tryStructuralTextMatching(
         matchReason,
         elementLength: elementText.length,
         expectedLength: text.length,
-        parentText: data.textContext?.parentText,
+        parentText: textContext?.parentText,
         expectedStartTag: startTag,
         expectedEndTag: endTag,
       });

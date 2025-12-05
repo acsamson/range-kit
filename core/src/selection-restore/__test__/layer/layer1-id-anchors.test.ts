@@ -18,7 +18,7 @@
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { restoreByIdAnchors } from '../../restorer/layers/layer1-id-anchors';
-import { SerializedSelection, RestoreStatus, LayerRestoreResult } from '../../types';
+import { SerializedSelection, LayerRestoreResult } from '../../types';
 import { setCustomIdConfig } from '../../serializer/serializer';
 
 describe('Layer 1: ID锚点恢复算法', () => {
@@ -80,67 +80,52 @@ describe('Layer 1: ID锚点恢复算法', () => {
   });
 
   // 创建测试数据的辅助函数
-  const createTestSelection = (overrides: Partial<SerializedSelection> = {}): SerializedSelection => ({
-    id: 'test-default',
-    text: '测试文本',
-    timestamp: Date.now(),
-    anchors: {
-      startId: 'test-container-1',
-      endId: 'test-container-1',
-      startOffset: 0,
-      endOffset: 10,
-    },
-    paths: {
-      startPath: '',
-      endPath: '',
-      startOffset: 0,
-      endOffset: 0,
-      startTextOffset: 0,
-      endTextOffset: 0,
-    },
-    multipleAnchors: {
-      startAnchors: { tagName: '', className: '', id: '', attributes: {} },
-      endAnchors: { tagName: '', className: '', id: '', attributes: {} },
-      commonParent: '',
-      siblingInfo: null,
-    },
-    structuralFingerprint: {
-      tagName: '',
-      className: '',
-      attributes: {},
-      textLength: 0,
-      childCount: 0,
-      depth: 0,
-      parentChain: [],
-      siblingPattern: { position: 0, total: 0, beforeTags: [], afterTags: [] },
-    },
-    textContext: {
-      precedingText: '',
-      followingText: '',
-      parentText: '',
-      textPosition: { start: 0, end: 0, totalLength: 0 },
-    },
-    metadata: {
-      url: 'http://localhost:3000/',
-      title: 'Test',
-      selectionBounds: {
-        x: 0, y: 0, width: 100, height: 20,
-        top: 0, right: 100, bottom: 20, left: 0,
-        toJSON: () => ({}),
-      } as DOMRect,
-      viewport: { width: 1920, height: 1080 },
-      userAgent: 'test-agent',
-    },
-    selectionContent: {
+  const createTestSelection = (overrides: Partial<SerializedSelection> & { anchors?: any } = {}): SerializedSelection => {
+    const { anchors: anchorsOverride, ...otherOverrides } = overrides;
+    return {
+      id: 'test-default',
       text: '测试文本',
-      mediaElements: [],
-    },
-    restoreStatus: 'pending' as RestoreStatus,
-    appName: 'Test App',
-    appUrl: 'http://localhost:3000/',
-    contentHash: 'test',
-    ...overrides,
-  });
+      restore: {
+        anchors: anchorsOverride || {
+          startId: 'test-container-1',
+          endId: 'test-container-1',
+          startOffset: 0,
+          endOffset: 10,
+        },
+        paths: {
+          startPath: '',
+          endPath: '',
+          startOffset: 0,
+          endOffset: 0,
+          startTextOffset: 0,
+          endTextOffset: 0,
+        },
+        multipleAnchors: {
+          startAnchors: { tagName: '', className: '', id: '', attributes: {} },
+          endAnchors: { tagName: '', className: '', id: '', attributes: {} },
+          commonParent: '',
+          siblingInfo: null,
+        },
+        fingerprint: {
+          tagName: '',
+          className: '',
+          attributes: {},
+          textLength: 0,
+          childCount: 0,
+          depth: 0,
+          parentChain: [],
+          siblingPattern: null,
+        },
+        context: {
+          precedingText: '',
+          followingText: '',
+          parentText: '',
+          textPosition: { start: 0, end: 0, totalLength: 0 },
+        },
+      },
+      ...otherOverrides,
+    };
+  };
 
   describe('🆕 根节点限定功能测试', () => {
     it('应该只在指定的根节点内查找ID元素', () => {

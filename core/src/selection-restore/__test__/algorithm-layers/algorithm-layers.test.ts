@@ -43,67 +43,52 @@ describe('四层级联算法测试场景', () => {
   /**
    * 创建测试用的选区数据（手动构造，不依赖DOM序列化）
    */
-  const createTestSelectionData = (overrides: Partial<SerializedSelection> = {}): SerializedSelection => ({
-    id: 'test-default',
-    text: '测试文本',
-    timestamp: Date.now(),
-    anchors: {
-      startId: 'test-element',
-      endId: 'test-element',
-      startOffset: 0,
-      endOffset: 4,
-    },
-    paths: {
-      startPath: '',
-      endPath: '',
-      startOffset: 0,
-      endOffset: 0,
-      startTextOffset: 0,
-      endTextOffset: 0,
-    },
-    multipleAnchors: {
-      startAnchors: { tagName: '', className: '', id: '', attributes: {} },
-      endAnchors: { tagName: '', className: '', id: '', attributes: {} },
-      commonParent: '',
-      siblingInfo: null,
-    },
-    structuralFingerprint: {
-      tagName: '',
-      className: '',
-      attributes: {},
-      textLength: 0,
-      childCount: 0,
-      depth: 0,
-      parentChain: [],
-      siblingPattern: { position: 0, total: 0, beforeTags: [], afterTags: [] },
-    },
-    textContext: {
-      precedingText: '',
-      followingText: '',
-      parentText: '',
-      textPosition: { start: 0, end: 0, totalLength: 0 },
-    },
-    metadata: {
-      url: 'http://localhost:3000/',
-      title: 'Test',
-      selectionBounds: {
-        x: 0, y: 0, width: 100, height: 20,
-        top: 0, right: 100, bottom: 20, left: 0,
-        toJSON: () => ({}),
-      } as DOMRect,
-      viewport: { width: 1920, height: 1080 },
-      userAgent: 'test-agent',
-    },
-    selectionContent: {
+  const createTestSelectionData = (overrides: Partial<SerializedSelection> & { anchors?: any } = {}): SerializedSelection => {
+    const { anchors: anchorsOverride, ...otherOverrides } = overrides;
+    return {
+      id: 'test-default',
       text: '测试文本',
-      mediaElements: [],
-    },
-    restoreStatus: 'pending' as any,
-    appName: 'Test App',
-    appUrl: 'http://localhost:3000/',
-    contentHash: 'test',
-    ...overrides,
-  });
+      restore: {
+        anchors: anchorsOverride || {
+          startId: 'test-element',
+          endId: 'test-element',
+          startOffset: 0,
+          endOffset: 4,
+        },
+        paths: {
+          startPath: '',
+          endPath: '',
+          startOffset: 0,
+          endOffset: 0,
+          startTextOffset: 0,
+          endTextOffset: 0,
+        },
+        multipleAnchors: {
+          startAnchors: { tagName: '', className: '', id: '', attributes: {} },
+          endAnchors: { tagName: '', className: '', id: '', attributes: {} },
+          commonParent: '',
+          siblingInfo: null,
+        },
+        fingerprint: {
+          tagName: '',
+          className: '',
+          attributes: {},
+          textLength: 0,
+          childCount: 0,
+          depth: 0,
+          parentChain: [],
+          siblingPattern: null,
+        },
+        context: {
+          precedingText: '',
+          followingText: '',
+          parentText: '',
+          textPosition: { start: 0, end: 0, totalLength: 0 },
+        },
+      },
+      ...otherOverrides,
+    };
+  };
 
   /**
    * 验证恢复结果的辅助函数

@@ -18,7 +18,7 @@ export function tryCreateCrossElementRange(
   text: string,
   data: SerializedSelection,
 ): Range | null {
-  const multipleAnchors = data.multipleAnchors;
+  const { multipleAnchors } = data.restore;
   if (!multipleAnchors || !multipleAnchors.startAnchors || !multipleAnchors.endAnchors) {
     return null;
   }

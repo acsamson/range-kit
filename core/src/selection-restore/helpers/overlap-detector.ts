@@ -125,7 +125,6 @@ export interface OverlapDebugData {
     id: string;
     text: string;
     type: string;
-    contentHash: string;
   }>;
   /** 每个选区的详细检测结果 */
   overlapDetectionResults: OverlapDetectionResult[];
@@ -405,8 +404,7 @@ export async function detectOverlappingSelections(
       allSavedSelections: allSelections.map(sel => ({
         id: sel.id,
         text: sel.text,
-        type: sel.type || '',
-        contentHash: sel.contentHash || ''
+        type: sel.type || ''
       })),
       overlapDetectionResults: [],
       finalOverlappedRanges: []

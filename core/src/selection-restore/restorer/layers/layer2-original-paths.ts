@@ -16,7 +16,8 @@ import { applySelectionWithStrictValidation } from '../utils';
 import { logDebug, logWarn, logError } from '../../debug/logger';
 
 export function restoreByOriginalPaths(data: SerializedSelection, containerConfig?: ContainerConfig): LayerRestoreResult {
-  const { paths, text } = data;
+  const { restore, text } = data;
+  const { paths } = restore;
 
   // 记录容器配置状态
   if (containerConfig) {

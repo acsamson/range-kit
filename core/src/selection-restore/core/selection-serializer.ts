@@ -33,7 +33,6 @@ export class SelectionSerializerWrapper {
       logSuccess('serializer', `选区已序列化: ${serialized.text.substring(0, 50)}...`, {
         id: serialized.id,
         length: serialized.text.length,
-        appName: serialized.appName,
       });
 
       return serialized;

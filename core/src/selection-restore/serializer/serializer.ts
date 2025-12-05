@@ -6,13 +6,10 @@ import {
   MultipleAnchorInfo,
   StructuralFingerprint,
   TextContext,
-  MetadataInfo,
   ElementAnchor,
   ParentChainItem,
   SiblingPattern,
   TextPosition,
-  ViewportInfo,
-  RestoreStatus,
 } from '../types';
 
 /**
@@ -20,21 +17,6 @@ import {
  */
 export function generateUniqueId(): string {
   return `sel_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-}
-
-/**
- * 生成内容哈希（用于去重）
- */
-export function generateContentHash(text: string, url: string, startPath: string, endPath: string): string {
-  // 简单的哈希算法，基于文本内容和位置路径
-  const content = `${text.trim()}|${url}|${startPath}|${endPath}`;
-  let hash = 0;
-  for (let i = 0; i < content.length; i++) {
-    const char = content.charCodeAt(i);
-    hash = ((hash << 5) - hash) + char;
-    hash = hash & hash; // 转换为32位整数
-  }
-  return Math.abs(hash).toString(36);
 }
 
 /**
@@ -501,28 +483,6 @@ export function extractTextContext(range: Range, contextLength: number = 50): Te
   };
 }
 
-/**
- * 提取元数据信息
- */
-export function extractMetadataInfo(range: Range): MetadataInfo {
-  const rect = range.getBoundingClientRect();
-
-  // 创建DOMRect对象
-  const selectionBounds = new DOMRect(rect.x, rect.y, rect.width, rect.height);
-
-  const viewport: ViewportInfo = {
-    width: window.innerWidth,
-    height: window.innerHeight,
-  };
-
-  return {
-    url: window.location.href,
-    title: document.title,
-    selectionBounds,
-    viewport,
-    userAgent: navigator.userAgent,
-  };
-}
 
 /**
  * 选区序列化器实现
@@ -558,34 +518,21 @@ export class SelectionSerializer implements Serializer {
       const anchors = extractAnchorInfo(range);
       const paths = extractPathInfo(range);
       const multipleAnchors = extractMultipleAnchorInfo(range);
-      const structuralFingerprint = extractStructuralFingerprint(range);
-      const textContext = extractTextContext(range, this.contextLength);
-      const metadata = extractMetadataInfo(range);
-
-      // 🎯 提取选区内容（包括多媒体）- 暂时使用简单实现
-      const selectionContent = {
-        text,
-        mediaElements: [],
-      };
-
-      // 生成内容哈希用于去重
-      const contentHash = generateContentHash(text, metadata.url, paths.startPath, paths.endPath);
+      const fingerprint = extractStructuralFingerprint(range);
+      const context = extractTextContext(range, this.contextLength);
 
       return {
         id: selectionId,
         text,
-        timestamp,
-        anchors,
-        paths,
-        multipleAnchors,
-        structuralFingerprint,
-        textContext,
-        metadata,
-        selectionContent,
-        restoreStatus: RestoreStatus.PENDING,
-        appName: document.title, // 使用页面标题作为应用名称
-        appUrl: metadata.url,
-        contentHash,
+        // 恢复算法数据包装到 restore 对象中
+        restore: {
+          anchors,
+          paths,
+          multipleAnchors,
+          fingerprint,
+          context,
+        },
+        // runtime 字段不在序列化时生成，恢复成功后由 API 层填充
       };
     } catch (error) {
       return null;

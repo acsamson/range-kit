@@ -79,8 +79,8 @@ export function findElementsByStructure(
 
     // 跨元素选区特殊加分：如果元素包含textContext中的父文本，给予额外分数
     const elementText = cleanElementText(element);
-    if (data?.textContext?.parentText) {
-      const parentText = data.textContext.parentText.trim();
+    if (data?.restore?.context?.parentText) {
+      const parentText = data.restore.context.parentText.trim();
       if (parentText && elementText.includes(parentText)) {
         similarity += L4_WEIGHT_ADJUSTMENTS.CROSS_ELEMENT_BONUS;
       }

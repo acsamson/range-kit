@@ -9,6 +9,8 @@ import type {
   SelectionRestoreOptions,
 } from '../types';
 
+import { RestoreStatus } from '../types';
+
 import type { SelectionValidator } from '../core/selection-validator';
 import type { SelectionSerializerWrapper } from '../core/selection-serializer';
 import type { SelectionRestorer } from '../core/selection-restorer';
@@ -138,11 +140,13 @@ export async function restore(
         deps.selectionManager.selectionHighlights.set(selectionData.id, highlightId);
       }
 
-      // 更新成功层级信息
+      // 更新运行时状态信息
       const updatedSelection: SerializedSelection = {
         ...selectionData,
-        successLayer: result.layer,
-        successLayerName: result.layerName,
+        runtime: {
+          restoreStatus: RestoreStatus.SUCCESS,
+          successLayer: result.layer,
+        },
       };
       await deps.storage.save(updatedSelection);
     }

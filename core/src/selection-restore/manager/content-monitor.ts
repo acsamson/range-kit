@@ -108,7 +108,7 @@ export class ContentMonitor {
         // 内容发生变化，触发回调
         const changeInfo: SelectionChangeInfo = {
           before: data,
-          after: { ...data, text: currentText, lastUpdated: Date.now() },
+          after: { ...data, text: currentText },
           changeType: 'content',
           details: `文本内容从 "${data.text.substring(0, 30)}..." 变更为 "${currentText.substring(0, 30)}..."`,
           timestamp: Date.now(),

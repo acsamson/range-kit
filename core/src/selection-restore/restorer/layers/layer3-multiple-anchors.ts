@@ -10,7 +10,8 @@ import { logDebug, logWarn, logError, logSuccess } from '../../debug/logger';
 import { L3_CANDIDATE_LIMITS, L3_TEXT_MATCHING, L3_SIMILARITY_WEIGHTS, L3_CLASS_SIMILARITY } from '../../constants';
 
 export function restoreByMultipleAnchors(data: SerializedSelection, containerConfig?: ContainerConfig): LayerRestoreResult {
-  const { multipleAnchors, text } = data;
+  const { restore, text } = data;
+  const { multipleAnchors } = restore;
 
   if (!multipleAnchors.startAnchors || !multipleAnchors.endAnchors) {
     logWarn('L3', 'L3跳过：缺少锚点信息', {

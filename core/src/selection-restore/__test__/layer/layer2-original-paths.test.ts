@@ -38,38 +38,31 @@ describe('Layer 2: DOM路径恢复算法', () => {
       const selectionData: SerializedSelection = {
         id: 'test-l2-root-limited',
         text: targetText,
-        timestamp: Date.now(),
-        anchors: { startId: '', endId: '', startOffset: 0, endOffset: 0 },
-        paths: {
-          startPath: 'section.l2-test-section > p.l2-test-paragraph',
-          endPath: 'section.l2-test-section > p.l2-test-paragraph',
-          startOffset: 8, // "这是Layer2" = 8个字符
-          endOffset: 15, // "根节点限定测试" = 7个字符，8+7=15
-          startTextOffset: 8,
-          endTextOffset: 15,
+        restore: {
+          anchors: { startId: '', endId: '', startOffset: 0, endOffset: 0 },
+          paths: {
+            startPath: 'section.l2-test-section > p.l2-test-paragraph',
+            endPath: 'section.l2-test-section > p.l2-test-paragraph',
+            startOffset: 8, // "这是Layer2" = 8个字符
+            endOffset: 15, // "根节点限定测试" = 7个字符，8+7=15
+            startTextOffset: 8,
+            endTextOffset: 15,
+          },
+          multipleAnchors: {
+            startAnchors: { tagName: '', className: '', id: '', attributes: {} },
+            endAnchors: { tagName: '', className: '', id: '', attributes: {} },
+            commonParent: '',
+            siblingInfo: null,
+          },
+          fingerprint: {
+            tagName: '', className: '', attributes: {}, textLength: 0,
+            childCount: 0, depth: 0, parentChain: [], siblingPattern: null,
+          },
+          context: {
+            precedingText: '', followingText: '', parentText: '',
+            textPosition: { start: 0, end: 0, totalLength: 0 },
+          },
         },
-        multipleAnchors: {
-          startAnchors: { tagName: '', className: '', id: '', attributes: {} },
-          endAnchors: { tagName: '', className: '', id: '', attributes: {} },
-          commonParent: '',
-          siblingInfo: null,
-        },
-        structuralFingerprint: {
-          tagName: '', className: '', attributes: {}, textLength: 0,
-          childCount: 0, depth: 0, parentChain: [], siblingPattern: null,
-        },
-        textContext: {
-          precedingText: '', followingText: '', parentText: '',
-          textPosition: { start: 0, end: 0, totalLength: 0 },
-        },
-        metadata: {
-          url: 'http://localhost:3000/', title: 'Test',
-          selectionBounds: { x: 0, y: 0, width: 100, height: 20, top: 0, right: 100, bottom: 20, left: 0, toJSON: () => ({}) } as DOMRect,
-          viewport: { width: 1920, height: 1080 }, userAgent: 'test-agent',
-        },
-        selectionContent: { text: targetText, mediaElements: [] },
-        restoreStatus: 'pending' as any, appName: 'Test App',
-        appUrl: 'http://localhost:3000/', contentHash: 'test',
       };
 
       // 使用根节点限定
@@ -93,37 +86,30 @@ describe('Layer 2: DOM路径恢复算法', () => {
       const selectionData: SerializedSelection = {
         id: 'test-l2-nonexistent-root',
         text: targetText,
-        timestamp: Date.now(),
-        anchors: { startId: '', endId: '', startOffset: 0, endOffset: 0 },
-        paths: {
-          startPath: 'div#rc-tabs-1-panel-2 > section.l2-pure-test-environment > article.l2-article-one > div.content-wrapper > header.content-header > span.category-badge',
-          endPath: 'div#rc-tabs-1-panel-2 > section.l2-pure-test-environment > article.l2-article-one > div.content-wrapper > header.content-header > span.category-badge',
-          startOffset: 0,
-          endOffset: 7,
-          startTextOffset: 0,
-          endTextOffset: 7,
+        restore: {
+          anchors: { startId: '', endId: '', startOffset: 0, endOffset: 0 },
+          paths: {
+            startPath: 'div#rc-tabs-1-panel-2 > section.l2-pure-test-environment > article.l2-article-one > div.content-wrapper > header.content-header > span.category-badge',
+            endPath: 'div#rc-tabs-1-panel-2 > section.l2-pure-test-environment > article.l2-article-one > div.content-wrapper > header.content-header > span.category-badge',
+            startOffset: 0,
+            endOffset: 7,
+            startTextOffset: 0,
+            endTextOffset: 7,
+          },
+          multipleAnchors: {
+            startAnchors: { tagName: '', className: '', id: '', attributes: {} },
+            endAnchors: { tagName: '', className: '', id: '', attributes: {} },
+            commonParent: '', siblingInfo: null,
+          },
+          fingerprint: {
+            tagName: '', className: '', attributes: {}, textLength: 0,
+            childCount: 0, depth: 0, parentChain: [], siblingPattern: null,
+          },
+          context: {
+            precedingText: '', followingText: '', parentText: '',
+            textPosition: { start: 0, end: 0, totalLength: 0 },
+          },
         },
-        multipleAnchors: {
-          startAnchors: { tagName: '', className: '', id: '', attributes: {} },
-          endAnchors: { tagName: '', className: '', id: '', attributes: {} },
-          commonParent: '', siblingInfo: null,
-        },
-        structuralFingerprint: {
-          tagName: '', className: '', attributes: {}, textLength: 0,
-          childCount: 0, depth: 0, parentChain: [], siblingPattern: null,
-        },
-        textContext: {
-          precedingText: '', followingText: '', parentText: '',
-          textPosition: { start: 0, end: 0, totalLength: 0 },
-        },
-        metadata: {
-          url: 'http://localhost:3000/', title: 'Test',
-          selectionBounds: { x: 0, y: 0, width: 100, height: 20, top: 0, right: 100, bottom: 20, left: 0, toJSON: () => ({}) } as DOMRect,
-          viewport: { width: 1920, height: 1080 }, userAgent: 'test-agent',
-        },
-        selectionContent: { text: targetText, mediaElements: [] },
-        restoreStatus: 'pending' as any, appName: 'Test App',
-        appUrl: 'http://localhost:3000/', contentHash: 'test',
       };
 
       // 使用不存在的根节点ID
@@ -233,67 +219,52 @@ describe('Layer 2: DOM路径恢复算法', () => {
   });
 
   // 基于layer2.ts示例数据创建测试数据
-  const createTestSelection = (overrides: Partial<SerializedSelection> = {}): SerializedSelection => ({
-    id: 'test-l2-default',
-    text: '测试文本',
-    timestamp: Date.now(),
-    anchors: {
-      startId: 'root',
-      endId: 'root',
-      startOffset: 0,
-      endOffset: 10,
-    },
-    paths: {
-      startPath: 'div#rc-tabs-1-panel-2 > section.l2-pure-test-environment',
-      endPath: 'div#rc-tabs-1-panel-2 > section.l2-pure-test-environment',
-      startOffset: 0,
-      endOffset: 0,
-      startTextOffset: 0,
-      endTextOffset: 0,
-    },
-    multipleAnchors: {
-      startAnchors: { tagName: 'div', className: '', id: '', attributes: {} },
-      endAnchors: { tagName: 'div', className: '', id: '', attributes: {} },
-      commonParent: '',
-      siblingInfo: null,
-    },
-    structuralFingerprint: {
-      tagName: 'div',
-      className: '',
-      attributes: {},
-      textLength: 0,
-      childCount: 0,
-      depth: 0,
-      parentChain: [],
-      siblingPattern: { position: 0, total: 0, beforeTags: [], afterTags: [] },
-    },
-    textContext: {
-      precedingText: '',
-      followingText: '',
-      parentText: '',
-      textPosition: { start: 0, end: 0, totalLength: 0 },
-    },
-    metadata: {
-      url: 'http://localhost:3000/',
-      title: '🎯 Selection Restore - React TypeScript Demo',
-      selectionBounds: {
-        x: 0, y: 0, width: 100, height: 20,
-        top: 0, right: 100, bottom: 20, left: 0,
-        toJSON: () => ({}),
-      } as DOMRect,
-      viewport: { width: 1677, height: 958 },
-      userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36',
-    },
-    selectionContent: {
+  const createTestSelection = (overrides: Partial<SerializedSelection> & { paths?: any } = {}): SerializedSelection => {
+    const { paths: pathsOverride, ...otherOverrides } = overrides;
+    return {
+      id: 'test-l2-default',
       text: '测试文本',
-      mediaElements: [],
-    },
-    restoreStatus: 'pending' as any,
-    appName: '🎯 Selection Restore - React TypeScript Demo',
-    appUrl: 'http://localhost:3000/',
-    contentHash: 'test',
-    ...overrides,
-  });
+      restore: {
+        anchors: {
+          startId: 'root',
+          endId: 'root',
+          startOffset: 0,
+          endOffset: 10,
+        },
+        paths: pathsOverride || {
+          startPath: 'div#rc-tabs-1-panel-2 > section.l2-pure-test-environment',
+          endPath: 'div#rc-tabs-1-panel-2 > section.l2-pure-test-environment',
+          startOffset: 0,
+          endOffset: 0,
+          startTextOffset: 0,
+          endTextOffset: 0,
+        },
+        multipleAnchors: {
+          startAnchors: { tagName: 'div', className: '', id: '', attributes: {} },
+          endAnchors: { tagName: 'div', className: '', id: '', attributes: {} },
+          commonParent: '',
+          siblingInfo: null,
+        },
+        fingerprint: {
+          tagName: 'div',
+          className: '',
+          attributes: {},
+          textLength: 0,
+          childCount: 0,
+          depth: 0,
+          parentChain: [],
+          siblingPattern: null,
+        },
+        context: {
+          precedingText: '',
+          followingText: '',
+          parentText: '',
+          textPosition: { start: 0, end: 0, totalLength: 0 },
+        },
+      },
+      ...otherOverrides,
+    };
+  };
 
   describe('✅ 基础功能测试', () => {
     it('应该成功恢复单元素内的文本选区', () => {
