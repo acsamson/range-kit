@@ -7,6 +7,7 @@
 import { SerializedSelection, ContainerConfig, LayerRestoreResult } from '../../types';
 import { applySelectionWithStrictValidation, intelligentTextMatch } from '../utils';
 import { logDebug, logWarn, logError, logSuccess } from '../../debug/logger';
+import { L3_CANDIDATE_LIMITS, L3_TEXT_MATCHING, L3_SIMILARITY_WEIGHTS, L3_CLASS_SIMILARITY } from '../../constants';
 
 export function restoreByMultipleAnchors(data: SerializedSelection, containerConfig?: ContainerConfig): LayerRestoreResult {
   const { multipleAnchors, text } = data;
@@ -56,7 +57,7 @@ export function restoreByMultipleAnchors(data: SerializedSelection, containerCon
     logDebug('L3', `L3候选元素：找到${startCandidatesWithText.length}个匹配元素`);
 
     // 尝试每个候选组合
-    for (let i = 0; i < startCandidatesWithText.length && i < 10; i++) {
+    for (let i = 0; i < startCandidatesWithText.length && i < L3_CANDIDATE_LIMITS.MAX_START_CANDIDATE_ATTEMPTS; i++) {
       const startElement = startCandidatesWithText[i].element;
 
       logDebug('L3', `L3测试候选元素 ${i + 1}/${startCandidatesWithText.length}`);
@@ -83,7 +84,7 @@ export function restoreByMultipleAnchors(data: SerializedSelection, containerCon
 
     logWarn('L3', 'L3失败：所有候选元素都未通过验证', {
       总候选数: startCandidatesWithText.length * endCandidatesWithText.length,
-      测试的组合数: Math.min(startCandidatesWithText.length, 10) * endCandidatesWithText.length,
+      测试的组合数: Math.min(startCandidatesWithText.length, L3_CANDIDATE_LIMITS.MAX_START_CANDIDATE_ATTEMPTS) * endCandidatesWithText.length,
     });
 
     return { success: false };
@@ -94,6 +95,138 @@ export function restoreByMultipleAnchors(data: SerializedSelection, containerCon
     });
     return { success: false };
   }
+}
+
+/**
+ * 解析 BEM 命名约定
+ * 格式: block__element--modifier
+ */
+interface BEMParsed {
+  block: string;
+  element?: string;
+  modifier?: string;
+}
+
+function parseBEM(className: string): BEMParsed | null {
+  // BEM 正则: block__element--modifier
+  const match = className.match(/^([a-z][a-z0-9-]*)(?:__([a-z][a-z0-9-]*))?(?:--([a-z][a-z0-9-]*))?$/i);
+  if (!match) {
+    return null;
+  }
+  return {
+    block: match[1],
+    element: match[2],
+    modifier: match[3],
+  };
+}
+
+/**
+ * 判断类名是否为低优先级类名
+ */
+function isLowPriorityClass(className: string): boolean {
+  const lowerClassName = className.toLowerCase();
+  return L3_CLASS_SIMILARITY.LOW_PRIORITY_PREFIXES.some(prefix => lowerClassName.startsWith(prefix));
+}
+
+/**
+ * 计算类名权重
+ */
+function getClassWeight(className: string): number {
+  if (isLowPriorityClass(className)) {
+    return L3_CLASS_SIMILARITY.NORMAL_CLASS_WEIGHT * L3_CLASS_SIMILARITY.LOW_PRIORITY_WEIGHT_FACTOR;
+  }
+  return L3_CLASS_SIMILARITY.NORMAL_CLASS_WEIGHT;
+}
+
+/**
+ * 计算两个类名的 BEM 相似度
+ */
+function calculateBEMSimilarity(class1: string, class2: string): number {
+  const bem1 = parseBEM(class1);
+  const bem2 = parseBEM(class2);
+
+  // 如果两者都不是 BEM 格式，使用普通相等比较
+  if (!bem1 && !bem2) {
+    return class1 === class2 ? 1 : 0;
+  }
+
+  // 如果只有一个是 BEM 格式，使用普通相等比较
+  if (!bem1 || !bem2) {
+    return class1 === class2 ? 1 : 0;
+  }
+
+  // 两者都是 BEM 格式，计算加权相似度
+  let score = 0;
+  let maxScore = 0;
+
+  // Block 匹配（最重要）
+  maxScore += L3_CLASS_SIMILARITY.BEM_BLOCK_WEIGHT;
+  if (bem1.block === bem2.block) {
+    score += L3_CLASS_SIMILARITY.BEM_BLOCK_WEIGHT;
+  }
+
+  // Element 匹配
+  if (bem1.element || bem2.element) {
+    maxScore += L3_CLASS_SIMILARITY.BEM_ELEMENT_WEIGHT;
+    if (bem1.element === bem2.element) {
+      score += L3_CLASS_SIMILARITY.BEM_ELEMENT_WEIGHT;
+    }
+  }
+
+  // Modifier 匹配
+  if (bem1.modifier || bem2.modifier) {
+    maxScore += L3_CLASS_SIMILARITY.BEM_MODIFIER_WEIGHT;
+    if (bem1.modifier === bem2.modifier) {
+      score += L3_CLASS_SIMILARITY.BEM_MODIFIER_WEIGHT;
+    }
+  }
+
+  return maxScore > 0 ? score / maxScore : 0;
+}
+
+/**
+ * 计算类名集合的相似度（优化版本）
+ * 支持 BEM 命名约定和类名权重
+ */
+function calculateClassSimilarity(elementClassName: string, anchorClassName: string): number {
+  // 完全相等直接返回 1
+  if (elementClassName === anchorClassName) {
+    return 1;
+  }
+
+  const elementClasses = elementClassName.split(/\s+/).filter(Boolean);
+  const anchorClasses = anchorClassName.split(/\s+/).filter(Boolean);
+
+  if (elementClasses.length === 0 || anchorClasses.length === 0) {
+    return 0;
+  }
+
+  let totalScore = 0;
+  let totalWeight = 0;
+
+  // 对于锚点的每个类名，找到最佳匹配
+  for (const anchorClass of anchorClasses) {
+    const weight = getClassWeight(anchorClass);
+    totalWeight += weight;
+
+    // 精确匹配
+    if (elementClasses.includes(anchorClass)) {
+      totalScore += weight;
+      continue;
+    }
+
+    // BEM 模糊匹配：找到最高相似度
+    let bestSimilarity = 0;
+    for (const elementClass of elementClasses) {
+      const similarity = calculateBEMSimilarity(elementClass, anchorClass);
+      if (similarity > bestSimilarity) {
+        bestSimilarity = similarity;
+      }
+    }
+    totalScore += weight * bestSimilarity;
+  }
+
+  return totalWeight > 0 ? totalScore / totalWeight : 0;
 }
 
 /**
@@ -117,16 +250,11 @@ function calculateElementSimilarityLocal(element: Element, anchor: any): number 
     }
   }
 
-  // 类名匹配
+  // 类名匹配（使用优化后的相似度计算）
   if (anchor.className) {
     maxScore += 1;
-    if (element.className === anchor.className) {
-      score += 1;
-    } else if (element.className && anchor.className) {
-      const elementClasses = new Set(element.className.split(/\s+/));
-      const anchorClasses = new Set(anchor.className.split(/\s+/));
-      const intersection = new Set([...elementClasses].filter(x => anchorClasses.has(x)));
-      score += intersection.size / Math.max(elementClasses.size, anchorClasses.size);
+    if (element.className && anchor.className) {
+      score += calculateClassSimilarity(element.className, anchor.className);
     }
   }
 
@@ -212,14 +340,14 @@ function findAnchorElements(anchor: any, expectedText?: string, containerConfig?
       let textSimilarity = 0;
       if (expectedText) {
         const elementText = element.textContent || '';
-        if (elementText.includes(expectedText.substring(0, 20))) {
+        if (elementText.includes(expectedText.substring(0, L3_TEXT_MATCHING.HIGH_CONFIDENCE_PREFIX_LENGTH))) {
           textSimilarity = 1.0; // 包含目标文本的开头部分，给予高分
-        } else if (elementText.includes(expectedText.substring(0, 10))) {
+        } else if (elementText.includes(expectedText.substring(0, L3_TEXT_MATCHING.MEDIUM_CONFIDENCE_PREFIX_LENGTH))) {
           textSimilarity = 0.8; // 包含目标文本的前10个字符
         } else {
           // 计算文本相似度（简单的字符匹配）
-          const expectedWords = expectedText.substring(0, 50).split('').filter((c: string) => c.trim());
-          const elementWords = elementText.substring(0, 100).split('').filter((c: string) => c.trim());
+          const expectedWords = expectedText.substring(0, L3_TEXT_MATCHING.EXPECTED_TEXT_CHAR_RANGE).split('').filter((c: string) => c.trim());
+          const elementWords = elementText.substring(0, L3_TEXT_MATCHING.ELEMENT_TEXT_CHAR_RANGE).split('').filter((c: string) => c.trim());
           const matchingChars = expectedWords.filter(char => elementWords.includes(char));
           textSimilarity = expectedWords.length > 0 ? matchingChars.length / expectedWords.length : 0;
         }
@@ -234,8 +362,8 @@ function findAnchorElements(anchor: any, expectedText?: string, containerConfig?
 
     // 按综合分数排序：文本相似度权重更高
     candidates.sort((a, b) => {
-      const scoreA = a.textSimilarity * 2 + a.similarity;
-      const scoreB = b.textSimilarity * 2 + b.similarity;
+      const scoreA = a.textSimilarity * L3_SIMILARITY_WEIGHTS.TEXT_SIMILARITY_MULTIPLIER + a.similarity;
+      const scoreB = b.textSimilarity * L3_SIMILARITY_WEIGHTS.TEXT_SIMILARITY_MULTIPLIER + b.similarity;
       return scoreB - scoreA;
     });
 
@@ -247,7 +375,7 @@ function findAnchorElements(anchor: any, expectedText?: string, containerConfig?
         tagName: c.element.tagName,
         similarity: c.similarity.toFixed(2),
         textSimilarity: c.textSimilarity.toFixed(2),
-        综合分数: (c.textSimilarity * 2 + c.similarity).toFixed(2),
+        综合分数: (c.textSimilarity * L3_SIMILARITY_WEIGHTS.TEXT_SIMILARITY_MULTIPLIER + c.similarity).toFixed(2),
         elementPreview: (c.element.textContent || '').substring(0, 30) + '...',
       })),
     });

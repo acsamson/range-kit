@@ -20,13 +20,6 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { restoreSelection } from '../../restorer/restorer';
 import { SerializedSelection } from '../../types';
 
-// 模拟全局Range存储
-declare global {
-  interface Window {
-    __lastRestoredRange?: Range;
-  }
-}
-
 describe('四层级联算法测试场景', () => {
   let container: HTMLDivElement;
 
@@ -36,7 +29,7 @@ describe('四层级联算法测试场景', () => {
     document.body.appendChild(container);
 
     // 清除全局Range存储
-    delete window.__lastRestoredRange;
+    // 不再需要清除全局Range
   });
 
   afterEach(() => {
@@ -44,7 +37,7 @@ describe('四层级联算法测试场景', () => {
     if (container.parentNode) {
       document.body.removeChild(container);
     }
-    delete window.__lastRestoredRange;
+    // 不再需要清除全局Range
   });
 
   /**

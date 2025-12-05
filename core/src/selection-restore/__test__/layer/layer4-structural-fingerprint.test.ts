@@ -19,14 +19,7 @@
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { restoreByStructuralFingerprint } from '../../restorer/layers/layer4-structural-fingerprint';
-import { SerializedSelection } from '../../types';
-
-// 模拟全局Range存储
-declare global {
-  interface Window {
-    __lastRestoredRange?: Range;
-  }
-}
+import { SerializedSelection, LayerRestoreResult } from '../../types';
 
 describe('Layer 4: 结构指纹恢复算法', () => {
   describe('🆕 根节点限定功能测试', () => {
@@ -83,8 +76,8 @@ describe('Layer 4: 结构指纹恢复算法', () => {
 
       const result = restoreByStructuralFingerprint(selectionData, containerConfig);
 
-      expect(result).toBe(true);
-      expect(window.__lastRestoredRange).toBeDefined();
+      expect(result.success).toBe(true);
+      expect(result.range).toBeDefined();
 
       // 清理测试元素
       document.body.removeChild(rootNode);
@@ -133,11 +126,11 @@ describe('Layer 4: 结构指纹恢复算法', () => {
 
       const result = restoreByStructuralFingerprint(selectionData, containerConfig);
 
-      expect(result).toBe(true);
-      expect(window.__lastRestoredRange).toBeDefined();
+      expect(result.success).toBe(true);
+      expect(result.range).toBeDefined();
 
-      if (window.__lastRestoredRange) {
-        const rangeText = window.__lastRestoredRange.toString();
+      if (result.range) {
+        const rangeText = result.range.toString();
         expect(rangeText).toBe(targetText);
       }
     });
@@ -212,7 +205,7 @@ describe('Layer 4: 结构指纹恢复算法', () => {
     document.body.appendChild(container);
 
     // 清除全局Range存储
-    delete window.__lastRestoredRange;
+    // 不再需要清除全局Range
   });
 
   afterEach(() => {
@@ -220,7 +213,7 @@ describe('Layer 4: 结构指纹恢复算法', () => {
     if (container.parentNode) {
       document.body.removeChild(container);
     }
-    delete window.__lastRestoredRange;
+    // 不再需要清除全局Range
   });
 
   // 创建测试数据的辅助函数
@@ -321,11 +314,11 @@ describe('Layer 4: 结构指纹恢复算法', () => {
 
       const result = restoreByStructuralFingerprint(selectionData);
 
-      expect(result).toBe(true);
-      expect(window.__lastRestoredRange).toBeDefined();
+      expect(result.success).toBe(true);
+      expect(result.range).toBeDefined();
 
-      if (window.__lastRestoredRange) {
-        const rangeText = window.__lastRestoredRange.toString();
+      if (result.range) {
+        const rangeText = result.range.toString();
         expect(rangeText).toBe(targetText);
       }
     });
@@ -359,11 +352,11 @@ describe('Layer 4: 结构指纹恢复算法', () => {
 
       const result = restoreByStructuralFingerprint(selectionData);
 
-      expect(result).toBe(true);
-      expect(window.__lastRestoredRange).toBeDefined();
+      expect(result.success).toBe(true);
+      expect(result.range).toBeDefined();
 
-      if (window.__lastRestoredRange) {
-        const rangeText = window.__lastRestoredRange.toString();
+      if (result.range) {
+        const rangeText = result.range.toString();
         expect(rangeText).toBe(targetText);
       }
     });
@@ -397,11 +390,11 @@ describe('Layer 4: 结构指纹恢复算法', () => {
 
       const result = restoreByStructuralFingerprint(selectionData);
 
-      expect(result).toBe(true);
-      expect(window.__lastRestoredRange).toBeDefined();
+      expect(result.success).toBe(true);
+      expect(result.range).toBeDefined();
 
-      if (window.__lastRestoredRange) {
-        const rangeText = window.__lastRestoredRange.toString();
+      if (result.range) {
+        const rangeText = result.range.toString();
         expect(rangeText).toBe(targetText);
       }
     });
@@ -444,11 +437,11 @@ describe('Layer 4: 结构指纹恢复算法', () => {
 
       const result = restoreByStructuralFingerprint(selectionData);
 
-      expect(result).toBe(true);
-      expect(window.__lastRestoredRange).toBeDefined();
+      expect(result.success).toBe(true);
+      expect(result.range).toBeDefined();
 
-      if (window.__lastRestoredRange) {
-        const rangeText = window.__lastRestoredRange.toString();
+      if (result.range) {
+        const rangeText = result.range.toString();
         expect(rangeText).toBe(targetText);
       }
     });
@@ -488,11 +481,11 @@ describe('Layer 4: 结构指纹恢复算法', () => {
 
       const result = restoreByStructuralFingerprint(selectionData);
 
-      expect(result).toBe(true);
-      expect(window.__lastRestoredRange).toBeDefined();
+      expect(result.success).toBe(true);
+      expect(result.range).toBeDefined();
 
-      if (window.__lastRestoredRange) {
-        const rangeText = window.__lastRestoredRange.toString();
+      if (result.range) {
+        const rangeText = result.range.toString();
         expect(rangeText).toContain('科学家们在量子计算');
       }
     });
@@ -529,11 +522,11 @@ describe('Layer 4: 结构指纹恢复算法', () => {
 
       const result = restoreByStructuralFingerprint(selectionData);
 
-      expect(result).toBe(true);
-      expect(window.__lastRestoredRange).toBeDefined();
+      expect(result.success).toBe(true);
+      expect(result.range).toBeDefined();
 
-      if (window.__lastRestoredRange) {
-        const rangeText = window.__lastRestoredRange.toString();
+      if (result.range) {
+        const rangeText = result.range.toString();
         expect(rangeText).toBe(targetText);
       }
     });
@@ -571,11 +564,11 @@ describe('Layer 4: 结构指纹恢复算法', () => {
 
       const result = restoreByStructuralFingerprint(selectionData);
 
-      expect(result).toBe(true);
-      expect(window.__lastRestoredRange).toBeDefined();
+      expect(result.success).toBe(true);
+      expect(result.range).toBeDefined();
 
-      if (window.__lastRestoredRange) {
-        const rangeText = window.__lastRestoredRange.toString();
+      if (result.range) {
+        const rangeText = result.range.toString();
         expect(rangeText).toBe(targetText);
       }
     });
@@ -615,11 +608,11 @@ describe('Layer 4: 结构指纹恢复算法', () => {
 
       const result = restoreByStructuralFingerprint(selectionData);
 
-      expect(result).toBe(true);
-      expect(window.__lastRestoredRange).toBeDefined();
+      expect(result.success).toBe(true);
+      expect(result.range).toBeDefined();
 
-      if (window.__lastRestoredRange) {
-        const rangeText = window.__lastRestoredRange.toString();
+      if (result.range) {
+        const rangeText = result.range.toString();
         expect(rangeText).toContain('游戏产业规模');
       }
     });
@@ -643,7 +636,7 @@ describe('Layer 4: 结构指纹恢复算法', () => {
 
       const result = restoreByStructuralFingerprint(selectionData);
 
-      expect(result).toBe(false);
+      expect(result.success).toBe(false);
     });
 
     it('应该处理找不到匹配元素的情况', () => {
@@ -664,7 +657,7 @@ describe('Layer 4: 结构指纹恢复算法', () => {
 
       const result = restoreByStructuralFingerprint(selectionData);
 
-      expect(result).toBe(false);
+      expect(result.success).toBe(false);
     });
 
     it('应该处理相似度过低的情况', () => {
@@ -687,7 +680,7 @@ describe('Layer 4: 结构指纹恢复算法', () => {
 
       const result = restoreByStructuralFingerprint(selectionData);
 
-      expect(result).toBe(false);
+      expect(result.success).toBe(false);
     });
 
     it('应该处理跨元素选区中找不到结束元素的情况', () => {
@@ -716,7 +709,8 @@ describe('Layer 4: 结构指纹恢复算法', () => {
 
       // 可能会降级到单元素匹配，或者完全失败
       // 这取决于L4算法的具体实现策略
-      expect(typeof result).toBe('boolean');
+      expect(typeof result).toBe('object');
+      expect(typeof result.success).toBe('boolean');
     });
   });
 
@@ -746,7 +740,7 @@ describe('Layer 4: 结构指纹恢复算法', () => {
       const endTime = performance.now();
       const duration = endTime - startTime;
 
-      expect(result).toBe(true);
+      expect(result.success).toBe(true);
       expect(duration).toBeLessThan(100); // 应该在100ms内完成
     });
 
@@ -771,7 +765,7 @@ describe('Layer 4: 结构指纹恢复算法', () => {
       const result = restoreByStructuralFingerprint(selectionData);
       const endTime = performance.now();
 
-      expect(result).toBe(true);
+      expect(result.success).toBe(true);
       expect(endTime - startTime).toBeLessThan(50); // 即使有多个候选，也应该快速完成
     });
   });
@@ -800,7 +794,7 @@ describe('Layer 4: 结构指纹恢复算法', () => {
 
       const result = restoreByStructuralFingerprint(selectionData, containerConfig);
 
-      expect(result).toBe(true);
+      expect(result.success).toBe(true);
     });
   });
 
@@ -842,7 +836,8 @@ describe('Layer 4: 结构指纹恢复算法', () => {
       const result = restoreByStructuralFingerprint(selectionData);
 
       // L4可能失败，但不应该抛出异常
-      expect(typeof result).toBe('boolean');
+      expect(typeof result).toBe('object');
+      expect(typeof result.success).toBe('boolean');
     });
 
     it('应该处理section→aside跨元素选区案例', () => {
@@ -893,9 +888,9 @@ describe('Layer 4: 结构指纹恢复算法', () => {
       const result = restoreByStructuralFingerprint(selectionData);
 
       // 这个跨元素测试应该能够成功，因为我们提供了精确的DOM结构
-      expect(result).toBe(true);
-      if (result && window.__lastRestoredRange) {
-        const rangeText = window.__lastRestoredRange.toString();
+      expect(result.success).toBe(true);
+      if (result.success && result.range) {
+        const rangeText = result.range.toString();
         expect(rangeText).toContain('🚗 新能源汽车技术突破');
       }
     });
@@ -934,9 +929,9 @@ describe('Layer 4: 结构指纹恢复算法', () => {
 
       const result = restoreByStructuralFingerprint(selectionData);
 
-      expect(result).toBe(true);
-      if (window.__lastRestoredRange) {
-        const rangeText = window.__lastRestoredRange.toString();
+      expect(result.success).toBe(true);
+      if (result.range) {
+        const rangeText = result.range.toString();
         expect(rangeText).toBe(targetText);
       }
     });

@@ -26,6 +26,12 @@ import {
   restoreByMultipleAnchors,
   restoreByStructuralFingerprint,
 } from './layers';
+import {
+  recordLayerAttempt,
+  recordRestoreResult,
+  isMetricsEnabled,
+  type LayerType,
+} from './metrics';
 
 export interface RestoreResult {
   success: boolean;
@@ -50,12 +56,17 @@ export function restoreSelection(data: SerializedSelection, containerConfig?: Co
   });
 
   // L1: ID锚点恢复（最精确）
+  let l1Time = 0;
   try {
+    const l1Start = performance.now();
     logDebug('restorer', '📍 尝试L1: ID锚点恢复');
     const l1Result = restoreByIdAnchors(data, containerConfig);
+    l1Time = performance.now() - l1Start;
+    recordLayerAttempt('L1', l1Result.success, l1Time);
     if (l1Result.success) {
       const restoreTime = performance.now() - startTime;
       logDebug('restorer', '✅ L1恢复成功');
+      recordRestoreResult(true, restoreTime, 'L1');
       return {
         success: true,
         layer: 1,
@@ -66,15 +77,21 @@ export function restoreSelection(data: SerializedSelection, containerConfig?: Co
     }
   } catch (error) {
     logError('restorer', 'L1恢复异常', error);
+    recordLayerAttempt('L1', false, l1Time);
   }
 
   // L2: DOM路径恢复（结构稳定）
+  let l2Time = 0;
   try {
+    const l2Start = performance.now();
     logDebug('restorer', '🛣️ 尝试L2: DOM路径恢复');
     const l2Result = restoreByOriginalPaths(data, containerConfig);
+    l2Time = performance.now() - l2Start;
+    recordLayerAttempt('L2', l2Result.success, l2Time);
     if (l2Result.success) {
       const restoreTime = performance.now() - startTime;
       logDebug('restorer', '✅ L2恢复成功');
+      recordRestoreResult(true, restoreTime, 'L2');
       return {
         success: true,
         layer: 2,
@@ -85,15 +102,21 @@ export function restoreSelection(data: SerializedSelection, containerConfig?: Co
     }
   } catch (error) {
     logError('restorer', 'L2恢复异常', error);
+    recordLayerAttempt('L2', false, l2Time);
   }
 
   // L3: 多锚点恢复（跨元素专业）
+  let l3Time = 0;
   try {
+    const l3Start = performance.now();
     logDebug('restorer', '⚓ 尝试L3: 多锚点恢复');
     const l3Result = restoreByMultipleAnchors(data, containerConfig);
+    l3Time = performance.now() - l3Start;
+    recordLayerAttempt('L3', l3Result.success, l3Time);
     if (l3Result.success) {
       const restoreTime = performance.now() - startTime;
       logDebug('restorer', '✅ L3恢复成功');
+      recordRestoreResult(true, restoreTime, 'L3');
       return {
         success: true,
         layer: 3,
@@ -104,15 +127,21 @@ export function restoreSelection(data: SerializedSelection, containerConfig?: Co
     }
   } catch (error) {
     logError('restorer', 'L3恢复异常', error);
+    recordLayerAttempt('L3', false, l3Time);
   }
 
   // L4: 结构指纹恢复（智能匹配）
+  let l4Time = 0;
   try {
+    const l4Start = performance.now();
     logDebug('restorer', '🔍 尝试L4: 结构指纹恢复');
     const l4Result = restoreByStructuralFingerprint(data, containerConfig);
+    l4Time = performance.now() - l4Start;
+    recordLayerAttempt('L4', l4Result.success, l4Time);
     if (l4Result.success) {
       const restoreTime = performance.now() - startTime;
       logDebug('restorer', '✅ L4恢复成功');
+      recordRestoreResult(true, restoreTime, 'L4');
       return {
         success: true,
         layer: 4,
@@ -123,10 +152,12 @@ export function restoreSelection(data: SerializedSelection, containerConfig?: Co
     }
   } catch (error) {
     logError('restorer', 'L4恢复异常', error);
+    recordLayerAttempt('L4', false, l4Time);
   }
 
   // 所有层级都失败
   const restoreTime = performance.now() - startTime;
+  recordRestoreResult(false, restoreTime);
   logWarn('restorer', '❌ 四层级联恢复全部失败', {
     reason: '内容可能发生了较大变化，建议用户重新选择',
     recommendation: '提示用户"内容已变化，请重新选择文本进行评论"',

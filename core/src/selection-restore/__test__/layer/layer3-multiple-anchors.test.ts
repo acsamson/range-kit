@@ -15,7 +15,7 @@
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { restoreByMultipleAnchors } from '../../restorer/layers/layer3-multiple-anchors';
-import { SerializedSelection, RestoreStatus } from '../../types';
+import { SerializedSelection, RestoreStatus, LayerRestoreResult } from '../../types';
 
 describe('Layer 3: 多重锚点恢复算法', () => {
   describe('🆕 根节点限定功能测试', () => {
@@ -71,8 +71,8 @@ describe('Layer 3: 多重锚点恢复算法', () => {
 
       const result = restoreByMultipleAnchors(selectionData, containerConfig);
 
-      expect(result).toBe(true);
-      expect(window.__lastRestoredRange).toBeDefined();
+      expect(result.success).toBe(true);
+      expect(result.range).toBeDefined();
 
       // 清理测试元素
       document.body.removeChild(rootNode);
@@ -133,11 +133,11 @@ describe('Layer 3: 多重锚点恢复算法', () => {
 
       const result = restoreByMultipleAnchors(selectionData, containerConfig);
 
-      expect(result).toBe(true);
-      expect(window.__lastRestoredRange).toBeDefined();
+      expect(result.success).toBe(true);
+      expect(result.range).toBeDefined();
 
-      if (window.__lastRestoredRange) {
-        const rangeText = window.__lastRestoredRange.toString();
+      if (result.range) {
+        const rangeText = result.range.toString();
         expect(rangeText).toBe(targetText);
       }
 
@@ -255,15 +255,15 @@ describe('Layer 3: 多重锚点恢复算法', () => {
       const mockData = createMockData(targetText, 'p', 'p');
 
       // 清除之前的Range存储
-      delete (window as any).__lastRestoredRange;
+      // 不再需要清除全局Range
 
       const result = restoreByMultipleAnchors(mockData);
-      expect(result).toBe(true);
+      expect(result.success).toBe(true);
 
       // 验证Range对象而不是Selection
-      expect((window as any).__lastRestoredRange).toBeDefined();
-      if ((window as any).__lastRestoredRange) {
-        const rangeText = (window as any).__lastRestoredRange.toString();
+      expect(result.range).toBeDefined();
+      if (result.range) {
+        const rangeText = result.range.toString();
         expect(rangeText).toBe(targetText);
       }
     });
@@ -281,15 +281,15 @@ describe('Layer 3: 多重锚点恢复算法', () => {
       const mockData = createMockData(targetText, 'p', 'p');
 
       // 清除之前的Range存储
-      delete (window as any).__lastRestoredRange;
+      // 不再需要清除全局Range
 
       const result = restoreByMultipleAnchors(mockData);
-      expect(result).toBe(true);
+      expect(result.success).toBe(true);
 
       // 验证Range对象
-      expect((window as any).__lastRestoredRange).toBeDefined();
-      if ((window as any).__lastRestoredRange) {
-        const rangeText = (window as any).__lastRestoredRange.toString();
+      expect(result.range).toBeDefined();
+      if (result.range) {
+        const rangeText = result.range.toString();
         expect(rangeText).toBe(targetText);
       }
     });
@@ -314,10 +314,10 @@ describe('Layer 3: 多重锚点恢复算法', () => {
       const targetText = '区块链技术正在重塑数字经济的基础架构';
       const mockData = createMockData(targetText, 'p', 'p');
 
-      delete (window as any).__lastRestoredRange;
+      // 不再需要清除全局Range
       let result = restoreByMultipleAnchors(mockData);
-      expect(result).toBe(true);
-      expect((window as any).__lastRestoredRange).toBeDefined();
+      expect(result.success).toBe(true);
+      expect(result.range).toBeDefined();
 
       // 结构2：完全不同的嵌套
       container.innerHTML = `
@@ -333,10 +333,10 @@ describe('Layer 3: 多重锚点恢复算法', () => {
         </main>
       `;
 
-      delete (window as any).__lastRestoredRange;
+      // 不再需要清除全局Range
       result = restoreByMultipleAnchors(mockData);
-      expect(result).toBe(true);
-      expect((window as any).__lastRestoredRange).toBeDefined();
+      expect(result.success).toBe(true);
+      expect(result.range).toBeDefined();
 
       // 结构3：扁平化结构
       container.innerHTML = `
@@ -348,10 +348,10 @@ describe('Layer 3: 多重锚点恢复算法', () => {
         </div>
       `;
 
-      delete (window as any).__lastRestoredRange;
+      // 不再需要清除全局Range
       result = restoreByMultipleAnchors(mockData);
-      expect(result).toBe(true);
-      expect((window as any).__lastRestoredRange).toBeDefined();
+      expect(result.success).toBe(true);
+      expect(result.range).toBeDefined();
     });
   });
 
@@ -375,13 +375,13 @@ describe('Layer 3: 多重锚点恢复算法', () => {
         disabledContainers: [],
       };
 
-      delete (window as any).__lastRestoredRange;
+      // 不再需要清除全局Range
       const result = restoreByMultipleAnchors(mockData, containerConfig);
-      expect(result).toBe(true);
+      expect(result.success).toBe(true);
 
-      expect((window as any).__lastRestoredRange).toBeDefined();
-      if ((window as any).__lastRestoredRange) {
-        const rangeText = (window as any).__lastRestoredRange.toString();
+      expect(result.range).toBeDefined();
+      if (result.range) {
+        const rangeText = result.range.toString();
         expect(rangeText).toBe(targetText);
       }
     });
@@ -405,13 +405,13 @@ describe('Layer 3: 多重锚点恢复算法', () => {
         disabledContainers: ['.disabled-area'],
       };
 
-      delete (window as any).__lastRestoredRange;
+      // 不再需要清除全局Range
       const result = restoreByMultipleAnchors(mockData, containerConfig);
-      expect(result).toBe(true);
+      expect(result.success).toBe(true);
 
-      expect((window as any).__lastRestoredRange).toBeDefined();
-      if ((window as any).__lastRestoredRange) {
-        const rangeText = (window as any).__lastRestoredRange.toString();
+      expect(result.range).toBeDefined();
+      if (result.range) {
+        const rangeText = result.range.toString();
         expect(rangeText).toBe(targetText);
       }
     });
@@ -420,22 +420,22 @@ describe('Layer 3: 多重锚点恢复算法', () => {
   describe('4. 错误处理和边界情况', () => {
     it('应该处理缺少锚点信息的情况', () => {
       const mockData = createMockData('测试文本', '', '');
-      delete (window as any).__lastRestoredRange;
+      // 不再需要清除全局Range
 
       const result = restoreByMultipleAnchors(mockData);
-      expect(result).toBe(false);
-      expect((window as any).__lastRestoredRange).toBeUndefined();
+      expect(result.success).toBe(false);
+      expect(result.range).toBeUndefined();
     });
 
     it('应该处理找不到匹配元素的情况', () => {
       container.innerHTML = '<div><span>无关内容</span></div>';
 
       const mockData = createMockData('不存在的文本', 'p', 'p');
-      delete (window as any).__lastRestoredRange;
+      // 不再需要清除全局Range
 
       const result = restoreByMultipleAnchors(mockData);
-      expect(result).toBe(false);
-      expect((window as any).__lastRestoredRange).toBeUndefined();
+      expect(result.success).toBe(false);
+      expect(result.range).toBeUndefined();
     });
 
     it('应该处理文本不匹配的情况', () => {
@@ -446,11 +446,11 @@ describe('Layer 3: 多重锚点恢复算法', () => {
       `;
 
       const mockData = createMockData('目标文本内容不存在', 'p', 'p');
-      delete (window as any).__lastRestoredRange;
+      // 不再需要清除全局Range
 
       const result = restoreByMultipleAnchors(mockData);
-      expect(result).toBe(false);
-      expect((window as any).__lastRestoredRange).toBeUndefined();
+      expect(result.success).toBe(false);
+      expect(result.range).toBeUndefined();
     });
   });
 
@@ -468,13 +468,13 @@ describe('Layer 3: 多重锚点恢复算法', () => {
       const targetText = '第三段文本，包含目标内容关键词';
       const mockData = createMockData(targetText, 'p', 'p');
 
-      delete (window as any).__lastRestoredRange;
+      // 不再需要清除全局Range
       const result = restoreByMultipleAnchors(mockData);
-      expect(result).toBe(true);
+      expect(result.success).toBe(true);
 
-      expect((window as any).__lastRestoredRange).toBeDefined();
-      if ((window as any).__lastRestoredRange) {
-        const rangeText = (window as any).__lastRestoredRange.toString();
+      expect(result.range).toBeDefined();
+      if (result.range) {
+        const rangeText = result.range.toString();
         expect(rangeText).toBe(targetText);
       }
     });
@@ -490,19 +490,130 @@ describe('Layer 3: 多重锚点恢复算法', () => {
       const targetText = '量子计算技术正在从实验室走向商业应用';
       const mockData = createMockData(targetText, 'p', 'p');
 
-      delete (window as any).__lastRestoredRange;
+      // 不再需要清除全局Range
       const result = restoreByMultipleAnchors(mockData);
-      expect(result).toBe(true);
+      expect(result.success).toBe(true);
 
-      expect((window as any).__lastRestoredRange).toBeDefined();
-      if ((window as any).__lastRestoredRange) {
-        const rangeText = (window as any).__lastRestoredRange.toString();
+      expect(result.range).toBeDefined();
+      if (result.range) {
+        const rangeText = result.range.toString();
         expect(rangeText).toBe(targetText);
       }
     });
   });
 
-  describe('6. 性能测试', () => {
+  describe('6. BEM 类名相似度计算测试', () => {
+    it('应该识别 BEM 命名格式并正确匹配', () => {
+      container.innerHTML = `
+        <article class="card__content--featured">
+          <p class="card__text--highlight">BEM命名测试文本内容</p>
+        </article>
+      `;
+
+      const targetText = 'BEM命名测试文本内容';
+      const mockData = createMockData(targetText, 'p', 'p', 'card__text--highlight', 'card__text--highlight');
+
+      const result = restoreByMultipleAnchors(mockData);
+      expect(result.success).toBe(true);
+
+      expect(result.range).toBeDefined();
+      if (result.range) {
+        const rangeText = result.range.toString();
+        expect(rangeText).toBe(targetText);
+      }
+    });
+
+    it('应该在多个候选元素中优先选择 BEM block 匹配度更高的元素', () => {
+      // 测试场景：有多个 p 元素，通过类名相似度排序选择正确的那个
+      container.innerHTML = `
+        <article>
+          <p class="card__text--active">正确的目标文本内容</p>
+          <p class="other__text--active">干扰文本内容</p>
+          <p class="card__text--active">正确的目标文本内容</p>
+        </article>
+      `;
+
+      const targetText = '正确的目标文本内容';
+      // 原始类名是 card__text--highlight，元素类名是 card__text--active
+      // 由于 block 和 element 相同（card__text），应该有较高相似度
+      // 使用仅标签名查询（无类名），测试相似度排序
+      const mockData = createMockData(targetText, 'p', 'p');
+
+      const result = restoreByMultipleAnchors(mockData);
+      expect(result.success).toBe(true);
+
+      expect(result.range).toBeDefined();
+      if (result.range) {
+        const rangeText = result.range.toString();
+        expect(rangeText).toBe(targetText);
+      }
+    });
+
+    it('应该正确处理带有 js- 前缀类名的元素', () => {
+      container.innerHTML = `
+        <article>
+          <p class="content js-hook">JS前缀类名测试</p>
+        </article>
+      `;
+
+      const targetText = 'JS前缀类名测试';
+      // 使用精确匹配的类名
+      const mockData = createMockData(targetText, 'p', 'p', 'content', 'content');
+
+      const result = restoreByMultipleAnchors(mockData);
+      expect(result.success).toBe(true);
+
+      expect(result.range).toBeDefined();
+      if (result.range) {
+        const rangeText = result.range.toString();
+        expect(rangeText).toBe(targetText);
+      }
+    });
+
+    it('应该支持多个类名的部分匹配', () => {
+      container.innerHTML = `
+        <article>
+          <p class="article__paragraph text--large u-padding">混合类名匹配测试</p>
+        </article>
+      `;
+
+      const targetText = '混合类名匹配测试';
+      // 使用部分匹配的类名（article__paragraph 存在于元素中）
+      const mockData = createMockData(targetText, 'p', 'p', 'article__paragraph', 'article__paragraph');
+
+      const result = restoreByMultipleAnchors(mockData);
+      expect(result.success).toBe(true);
+
+      expect(result.range).toBeDefined();
+      if (result.range) {
+        const rangeText = result.range.toString();
+        expect(rangeText).toBe(targetText);
+      }
+    });
+
+    it('应该正确处理带有状态类的元素', () => {
+      container.innerHTML = `
+        <article>
+          <p class="button is-active has-icon">状态类测试文本</p>
+        </article>
+      `;
+
+      const targetText = '状态类测试文本';
+      // 使用 button 类名匹配（主要类名）
+      const mockData = createMockData(targetText, 'p', 'p', 'button', 'button');
+
+      const result = restoreByMultipleAnchors(mockData);
+      expect(result.success).toBe(true);
+
+      expect(result.range).toBeDefined();
+      if (result.range) {
+        const rangeText = result.range.toString();
+        expect(rangeText).toBe(targetText);
+      }
+    });
+  });
+
+  describe('7. 性能测试', () => {
     it('应该在复杂DOM结构中保持良好性能', () => {
       // 创建复杂的DOM结构
       let complexHTML = '<div>';
@@ -516,17 +627,17 @@ describe('Layer 3: 多重锚点恢复算法', () => {
       const targetText = '内容25文本数据测试25';
       const mockData = createMockData(targetText, 'p', 'p');
 
-      delete (window as any).__lastRestoredRange;
+      // 不再需要清除全局Range
       const startTime = performance.now();
       const result = restoreByMultipleAnchors(mockData);
       const endTime = performance.now();
 
-      expect(result).toBe(true);
+      expect(result.success).toBe(true);
       expect(endTime - startTime).toBeLessThan(500); // 应该在500ms内完成
 
-      expect((window as any).__lastRestoredRange).toBeDefined();
-      if ((window as any).__lastRestoredRange) {
-        const rangeText = (window as any).__lastRestoredRange.toString();
+      expect(result.range).toBeDefined();
+      if (result.range) {
+        const rangeText = result.range.toString();
         expect(rangeText).toBe(targetText);
       }
     });

@@ -2,10 +2,17 @@
  * ===================================================================
  * Layer 2: DOM路径恢复算法
  * ===================================================================
+ *
+ * 职责：精确的 DOM 路径恢复
+ * - 使用 CSS 选择器或 XPath 定位元素
+ * - 使用原始偏移量恢复选区
+ * - 失败时直接返回 { success: false }，由主流程下沉到 L3/L4
+ *
+ * 注意：L2 不进行文本匹配降级，文本匹配是 L3/L4 的职责
  */
 
 import { SerializedSelection, ContainerConfig, LayerRestoreResult } from '../../types';
-import { applySelectionWithStrictValidation, intelligentTextMatch } from '../utils';
+import { applySelectionWithStrictValidation } from '../utils';
 import { logDebug, logWarn, logError } from '../../debug/logger';
 
 export function restoreByOriginalPaths(data: SerializedSelection, containerConfig?: ContainerConfig): LayerRestoreResult {
@@ -85,7 +92,7 @@ export function restoreByOriginalPaths(data: SerializedSelection, containerConfi
       return restoreCrossElementSelection(startElement, endElement, paths, text);
     }
 
-    // 单元素内的选择 - 优先尝试原始偏移量，失败则使用智能文本匹配
+    // 单元素内的选择 - 使用原始偏移量恢复
     logDebug('L2', '单元素内选择：尝试原始偏移量方式');
 
     const startPos = findTextNodePosition(startElement, paths.startOffset);
@@ -96,20 +103,26 @@ export function restoreByOriginalPaths(data: SerializedSelection, containerConfi
       range.setStart(startPos.node, startPos.offset);
       range.setEnd(endPos.node, endPos.offset);
 
-      // 先验证原始偏移量是否能恢复正确的文本
+      // 验证原始偏移量是否能恢复正确的文本
       const result = applySelectionWithStrictValidation(range, text, 'L2');
       if (result.success) {
         logDebug('L2', '✅ 原始偏移量恢复成功');
         return result;
       }
 
-      logDebug('L2', '⚠️ 原始偏移量恢复失败，尝试智能文本匹配降级策略');
+      logWarn('L2', '❌ L2失败：原始偏移量恢复未成功，下沉到L3/L4', {
+        rangeText: range.toString().substring(0, 50) + '...',
+        expectedText: text.substring(0, 50) + '...',
+      });
     } else {
-      logDebug('L2', '⚠️ 文本位置查找失败，直接使用智能文本匹配策略');
+      logWarn('L2', '❌ L2失败：文本位置查找失败，下沉到L3/L4', {
+        startOffset: paths.startOffset,
+        endOffset: paths.endOffset,
+      });
     }
 
-    // 降级策略：使用智能文本匹配（单元素版本）
-    return attemptSingleElementTextMatching(startElement, text);
+    // L2 专注于精确路径恢复，不做文本匹配降级
+    return { success: false };
   } catch (error) {
     logError('L2', '原始路径恢复异常', error);
     return { success: false };
@@ -138,11 +151,12 @@ function findElementByPath(path: string, rootNode: Element | Document = document
 
 /**
  * 跨元素选择恢复策略
+ * L2 对跨元素选择只尝试基于原始偏移量的恢复，不做文本匹配
  */
 function restoreCrossElementSelection(
   startElement: Element,
   endElement: Element,
-  _paths: any,
+  paths: any,
   expectedText: string,
 ): LayerRestoreResult {
   logDebug('L2', '开始跨元素选择恢复', {
@@ -152,10 +166,31 @@ function restoreCrossElementSelection(
   });
 
   try {
-    // 对于跨元素选择，直接使用智能文本匹配
-    // 因为单个元素的offset在跨元素场景下没有意义
-    logDebug('L2', '跨元素选择：使用智能文本匹配策略');
-    return attemptCrossElementTextMatching(startElement, endElement, expectedText);
+    // 尝试使用原始偏移量创建跨元素 Range
+    const startPos = findTextNodePosition(startElement, paths.startTextOffset || paths.startOffset);
+    const endPos = findTextNodePosition(endElement, paths.endTextOffset || paths.endOffset);
+
+    if (startPos && endPos) {
+      const range = document.createRange();
+      range.setStart(startPos.node, startPos.offset);
+      range.setEnd(endPos.node, endPos.offset);
+
+      const result = applySelectionWithStrictValidation(range, expectedText, 'L2');
+      if (result.success) {
+        logDebug('L2', '✅ 跨元素原始偏移量恢复成功');
+        return result;
+      }
+
+      logWarn('L2', '❌ L2失败：跨元素偏移量恢复未成功，下沉到L3/L4', {
+        rangeText: range.toString().substring(0, 50) + '...',
+        expectedText: expectedText.substring(0, 50) + '...',
+      });
+    } else {
+      logWarn('L2', '❌ L2失败：跨元素文本位置查找失败，下沉到L3/L4');
+    }
+
+    // L2 专注于精确路径恢复，不做文本匹配降级
+    return { success: false };
   } catch (error) {
     logError('L2', '跨元素选择恢复异常', error);
     return { success: false };
@@ -163,214 +198,8 @@ function restoreCrossElementSelection(
 }
 
 /**
- * 单元素文本智能匹配
- */
-function attemptSingleElementTextMatching(element: Element, expectedText: string): LayerRestoreResult {
-  logDebug('L2', '🔍 单元素智能文本匹配开始', {
-    element: element.tagName,
-    expectedTextPreview: expectedText.substring(0, 50) + (expectedText.length > 50 ? '...' : ''),
-  });
-
-  try {
-    const elementText = element.textContent || '';
-
-    // 使用智能文本匹配
-    const textIndex = intelligentTextMatch(elementText, expectedText);
-
-    logDebug('L2', '单元素智能匹配结果', {
-      textIndex,
-      elementTextPreview: elementText.substring(0, 100) + (elementText.length > 100 ? '...' : ''),
-      expectedTextPreview: expectedText.substring(0, 50) + (expectedText.length > 50 ? '...' : ''),
-      elementTextLength: elementText.length,
-      expectedTextLength: expectedText.length,
-    });
-
-    if (textIndex === -1) {
-      logWarn('L2', '在目标元素中未找到目标文本', {
-        elementTextPreview: elementText.substring(0, 100) + '...',
-        expectedTextPreview: expectedText.substring(0, 50) + '...',
-      });
-      return { success: false };
-    }
-
-    logDebug('L2', '✅ 找到目标文本位置', { textIndex });
-
-    // 使用TreeWalker在元素中定位精确位置
-    const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT, null);
-    let currentOffset = 0;
-    let startNode: Node | null = null;
-    let endNode: Node | null = null;
-    let startOffset = 0;
-    let endOffset = 0;
-    let node: Node | null = walker.nextNode();
-    while (node) {
-      const nodeLength = (node.textContent || '').length;
-
-      // 找到起始位置
-      if (!startNode && currentOffset <= textIndex && textIndex < currentOffset + nodeLength) {
-        startNode = node;
-        startOffset = textIndex - currentOffset;
-      }
-
-      // 找到结束位置
-      const textEndIndex = textIndex + expectedText.length;
-      if (!endNode && currentOffset < textEndIndex && textEndIndex <= currentOffset + nodeLength) {
-        endNode = node;
-        endOffset = textEndIndex - currentOffset;
-      }
-
-      currentOffset += nodeLength;
-      node = walker.nextNode();
-
-      if (startNode && endNode) break;
-    }
-
-    if (!startNode || !endNode) {
-      logWarn('L2', '单元素文本匹配：无法定位起始或结束节点');
-      return { success: false };
-    }
-
-    // 创建Range并验证
-    const range = document.createRange();
-    range.setStart(startNode, startOffset);
-    range.setEnd(endNode, endOffset);
-
-    logDebug('L2', '🎯 单元素智能匹配创建Range', {
-      startNodeText: startNode.textContent?.substring(0, 20) + '...',
-      startOffset,
-      endNodeText: endNode.textContent?.substring(0, 20) + '...',
-      endOffset,
-    });
-
-    return applySelectionWithStrictValidation(range, expectedText, 'L2');
-  } catch (error) {
-    logError('L2', '单元素文本匹配异常', error);
-    return { success: false };
-  }
-}
-
-/**
- * 跨元素文本智能匹配
- */
-function attemptCrossElementTextMatching(
-  startElement: Element,
-  endElement: Element,
-  expectedText: string,
-): LayerRestoreResult {
-  logDebug('L2', '尝试跨元素文本智能匹配');
-
-  try {
-    // 找到共同父元素
-    const commonParent = findCommonParent(startElement, endElement);
-    if (!commonParent) {
-      logWarn('L2', '无法找到共同父元素');
-      return { success: false };
-    }
-
-    // 在共同父元素中查找目标文本
-    const parentText = commonParent.textContent || '';
-
-    // 使用智能文本匹配
-    const textIndex = intelligentTextMatch(parentText, expectedText);
-
-    logDebug('L2', '智能文本匹配结果', {
-      textIndex,
-      parentTextPreview: parentText.substring(0, 100) + (parentText.length > 100 ? '...' : ''),
-      expectedTextPreview: expectedText.substring(0, 50) + (expectedText.length > 50 ? '...' : ''),
-      parentTextLength: parentText.length,
-      expectedTextLength: expectedText.length,
-    });
-
-    if (textIndex === -1) {
-      logWarn('L2', '在共同父元素中未找到目标文本', {
-        parentTextPreview: parentText.substring(0, 100) + '...',
-        expectedTextPreview: expectedText.substring(0, 50) + '...',
-      });
-      return { success: false };
-    }
-
-    logDebug('L2', '找到目标文本位置', { textIndex });
-
-    // 使用TreeWalker在共同父元素中定位精确位置
-    const walker = document.createTreeWalker(commonParent, NodeFilter.SHOW_TEXT, null);
-    let currentOffset = 0;
-    let startNode: Node | null = null;
-    let endNode: Node | null = null;
-    let startOffset = 0;
-    let endOffset = 0;
-    let node: Node | null = walker.nextNode();
-    while (node) {
-      const nodeLength = (node.textContent || '').length;
-
-      // 找到起始位置
-      if (!startNode && currentOffset <= textIndex && textIndex < currentOffset + nodeLength) {
-        startNode = node;
-        startOffset = textIndex - currentOffset;
-      }
-
-      // 找到结束位置
-      const textEndIndex = textIndex + expectedText.length;
-      if (!endNode && currentOffset < textEndIndex && textEndIndex <= currentOffset + nodeLength) {
-        endNode = node;
-        endOffset = textEndIndex - currentOffset;
-      }
-
-      currentOffset += nodeLength;
-      node = walker.nextNode();
-
-      if (startNode && endNode) break;
-    }
-
-    if (!startNode || !endNode) {
-      logWarn('L2', '跨元素文本匹配：无法定位起始或结束节点');
-      return { success: false };
-    }
-
-    // 创建Range并验证
-    const range = document.createRange();
-    range.setStart(startNode, startOffset);
-    range.setEnd(endNode, endOffset);
-
-    return applySelectionWithStrictValidation(range, expectedText, 'L2');
-  } catch (error) {
-    logError('L2', '跨元素文本匹配异常', error);
-    return { success: false };
-  }
-}
-
-/**
- * 查找两个元素的最近共同父元素
- */
-function findCommonParent(element1: Element, element2: Element): Element | null {
-  const parents1 = getParentChain(element1);
-  const parents2 = getParentChain(element2);
-
-  for (const parent1 of parents1) {
-    if (parents2.includes(parent1)) {
-      return parent1;
-    }
-  }
-
-  return null;
-}
-
-/**
- * 获取元素的父级链
- */
-function getParentChain(element: Element): Element[] {
-  const parents: Element[] = [];
-  let current: Element | null = element.parentElement;
-
-  while (current) {
-    parents.push(current);
-    current = current.parentElement;
-  }
-
-  return parents;
-}
-
-/**
  * 在元素中查找指定偏移量的文本节点位置
+ * 注意：使用 >= 来支持末尾位置（offset 等于文本长度时需要定位到最后一个字符之后）
  */
 function findTextNodePosition(element: Element, offset: number): { node: Node; offset: number } | null {
   const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT, null);
@@ -381,7 +210,8 @@ function findTextNodePosition(element: Element, offset: number): { node: Node; o
   while (node) {
     const nodeLength = (node.textContent || '').length;
 
-    if (currentOffset + nodeLength > offset) {
+    // 使用 >= 确保 offset 等于累积长度时也能正确定位（用于 Range 末尾位置）
+    if (currentOffset + nodeLength >= offset) {
       return { node, offset: offset - currentOffset };
     }
 

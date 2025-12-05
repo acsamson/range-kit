@@ -8,6 +8,7 @@ import { SerializedSelection } from '../../../types';
 import { intelligentTextMatch } from '../../utils';
 import { logDebug, logWarn } from '../../../debug/logger';
 import { findEndElementCandidates } from './candidate-finder';
+import { L4_WEIGHT_ADJUSTMENTS } from '../../../constants';
 
 /**
  * 尝试创建跨元素Range
@@ -122,7 +123,7 @@ export function createCrossElementRange(
       actualStart: rangeText.substring(0, 30) + '...',
     });
 
-    if (similarity >= 0.3) {
+    if (similarity >= L4_WEIGHT_ADJUSTMENTS.CROSS_ELEMENT_MIN_SIMILARITY) {
       logDebug('L4', 'L4跨元素Range结构匹配接受', {
         similarity: (similarity * 100).toFixed(1) + '%',
         reason: '结构匹配模式，降低文本相似度要求',

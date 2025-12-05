@@ -18,15 +18,8 @@
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { restoreByIdAnchors } from '../../restorer/layers/layer1-id-anchors';
-import { SerializedSelection, RestoreStatus } from '../../types';
+import { SerializedSelection, RestoreStatus, LayerRestoreResult } from '../../types';
 import { setCustomIdConfig } from '../../serializer/serializer';
-
-// 模拟全局Range存储
-declare global {
-  interface Window {
-    __lastRestoredRange?: Range;
-  }
-}
 
 describe('Layer 1: ID锚点恢复算法', () => {
   let container: HTMLDivElement;
@@ -77,9 +70,6 @@ describe('Layer 1: ID锚点恢复算法', () => {
     `;
 
     document.body.appendChild(container);
-
-    // 清除全局Range存储
-    delete window.__lastRestoredRange;
   });
 
   afterEach(() => {
@@ -87,7 +77,6 @@ describe('Layer 1: ID锚点恢复算法', () => {
     if (container.parentNode) {
       document.body.removeChild(container);
     }
-    delete window.__lastRestoredRange;
   });
 
   // 创建测试数据的辅助函数
@@ -192,11 +181,11 @@ describe('Layer 1: ID锚点恢复算法', () => {
 
       const result = restoreByIdAnchors(selectionData, containerConfig);
 
-      expect(result).toBe(true);
-      expect(window.__lastRestoredRange).toBeDefined();
+      expect(result.success).toBe(true);
+      expect(result.range).toBeDefined();
 
-      if (window.__lastRestoredRange) {
-        const rangeText = window.__lastRestoredRange.toString();
+      if (result.range) {
+        const rangeText = result.range.toString();
         expect(rangeText).toContain(targetText);
       }
 
@@ -231,11 +220,11 @@ describe('Layer 1: ID锚点恢复算法', () => {
 
       const result = restoreByIdAnchors(selectionData, containerConfig);
 
-      expect(result).toBe(true);
-      expect(window.__lastRestoredRange).toBeDefined();
+      expect(result.success).toBe(true);
+      expect(result.range).toBeDefined();
 
-      if (window.__lastRestoredRange) {
-        const rangeText = window.__lastRestoredRange.toString();
+      if (result.range) {
+        const rangeText = result.range.toString();
         expect(rangeText).toBe(targetText);
       }
     });
@@ -264,11 +253,11 @@ describe('Layer 1: ID锚点恢复算法', () => {
 
       const result = restoreByIdAnchors(selectionData);
 
-      expect(result).toBe(true);
-      expect(window.__lastRestoredRange).toBeDefined();
+      expect(result.success).toBe(true);
+      expect(result.range).toBeDefined();
 
-      if (window.__lastRestoredRange) {
-        const rangeText = window.__lastRestoredRange.toString();
+      if (result.range) {
+        const rangeText = result.range.toString();
         expect(rangeText).toBe(targetText);
       }
     });
@@ -293,11 +282,11 @@ describe('Layer 1: ID锚点恢复算法', () => {
 
       const result = restoreByIdAnchors(selectionData);
 
-      expect(result).toBe(true);
-      expect(window.__lastRestoredRange).toBeDefined();
+      expect(result.success).toBe(true);
+      expect(result.range).toBeDefined();
 
-      if (window.__lastRestoredRange) {
-        const rangeText = window.__lastRestoredRange.toString();
+      if (result.range) {
+        const rangeText = result.range.toString();
         expect(rangeText).toBe(targetText);
       }
     });
@@ -322,11 +311,11 @@ describe('Layer 1: ID锚点恢复算法', () => {
 
       const result = restoreByIdAnchors(selectionData);
 
-      expect(result).toBe(true);
-      expect(window.__lastRestoredRange).toBeDefined();
+      expect(result.success).toBe(true);
+      expect(result.range).toBeDefined();
 
-      if (window.__lastRestoredRange) {
-        const rangeText = window.__lastRestoredRange.toString();
+      if (result.range) {
+        const rangeText = result.range.toString();
         expect(rangeText).toBe(targetText);
       }
     });
@@ -345,10 +334,10 @@ describe('Layer 1: ID锚点恢复算法', () => {
 
       const result = restoreByIdAnchors(selectionData);
 
-      if (result) {
-        expect(window.__lastRestoredRange).toBeDefined();
-        if (window.__lastRestoredRange) {
-          const rangeText = window.__lastRestoredRange.toString();
+      if (result.success) {
+        expect(result.range).toBeDefined();
+        if (result.range) {
+          const rangeText = result.range.toString();
           expect(rangeText).toBe(selectionData.text);
         }
       }
@@ -368,8 +357,8 @@ describe('Layer 1: ID锚点恢复算法', () => {
       });
 
       const result = restoreByIdAnchors(selectionData);
-      expect(result).toBe(false);
-      expect(window.__lastRestoredRange).toBeUndefined();
+      expect(result.success).toBe(false);
+      expect(result.range).toBeUndefined();
     });
 
     it('应该正确处理缺少endId的情况', () => {
@@ -384,8 +373,8 @@ describe('Layer 1: ID锚点恢复算法', () => {
       });
 
       const result = restoreByIdAnchors(selectionData);
-      expect(result).toBe(false);
-      expect(window.__lastRestoredRange).toBeUndefined();
+      expect(result.success).toBe(false);
+      expect(result.range).toBeUndefined();
     });
 
     it('应该正确处理不存在的ID元素', () => {
@@ -400,8 +389,8 @@ describe('Layer 1: ID锚点恢复算法', () => {
       });
 
       const result = restoreByIdAnchors(selectionData);
-      expect(result).toBe(false);
-      expect(window.__lastRestoredRange).toBeUndefined();
+      expect(result.success).toBe(false);
+      expect(result.range).toBeUndefined();
     });
 
     it('应该正确处理文本不匹配的情况', () => {
@@ -417,8 +406,8 @@ describe('Layer 1: ID锚点恢复算法', () => {
       });
 
       const result = restoreByIdAnchors(selectionData);
-      expect(result).toBe(false);
-      expect(window.__lastRestoredRange).toBeUndefined();
+      expect(result.success).toBe(false);
+      expect(result.range).toBeUndefined();
     });
 
     it('应该处理偏移量超出范围但尝试智能调整', () => {
@@ -435,7 +424,8 @@ describe('Layer 1: ID锚点恢复算法', () => {
 
       const result = restoreByIdAnchors(selectionData);
       // 可能成功也可能失败，主要测试不会抛出异常
-      expect(typeof result).toBe('boolean');
+      expect(typeof result).toBe('object');
+      expect(typeof result.success).toBe('boolean');
     });
   });
 
@@ -454,11 +444,11 @@ describe('Layer 1: ID锚点恢复算法', () => {
 
       const result = restoreByIdAnchors(selectionData);
 
-      if (result) {
-        expect(window.__lastRestoredRange).toBeDefined();
-        if (window.__lastRestoredRange) {
-          expect(window.__lastRestoredRange.toString()).toBe('');
-          expect(window.__lastRestoredRange.collapsed).toBe(true);
+      if (result.success) {
+        expect(result.range).toBeDefined();
+        if (result.range) {
+          expect(result.range.toString()).toBe('');
+          expect(result.range.collapsed).toBe(true);
         }
       }
     });
@@ -477,11 +467,11 @@ describe('Layer 1: ID锚点恢复算法', () => {
 
       const result = restoreByIdAnchors(selectionData);
 
-      if (result) {
-        expect(window.__lastRestoredRange).toBeDefined();
-        if (window.__lastRestoredRange) {
-          expect(window.__lastRestoredRange.toString()).toBe('L');
-          expect(window.__lastRestoredRange.collapsed).toBe(false);
+      if (result.success) {
+        expect(result.range).toBeDefined();
+        if (result.range) {
+          expect(result.range.toString()).toBe('L');
+          expect(result.range.collapsed).toBe(false);
         }
       }
     });
@@ -500,10 +490,10 @@ describe('Layer 1: ID锚点恢复算法', () => {
 
       const result = restoreByIdAnchors(selectionData);
 
-      if (result) {
-        expect(window.__lastRestoredRange).toBeDefined();
-        if (window.__lastRestoredRange) {
-          expect(window.__lastRestoredRange.toString()).toBe('🚀 #区块链 #金融科技 #创新');
+      if (result.success) {
+        expect(result.range).toBeDefined();
+        if (result.range) {
+          expect(result.range.toString()).toBe('🚀 #区块链 #金融科技 #创新');
         }
       }
     });
@@ -522,10 +512,10 @@ describe('Layer 1: ID锚点恢复算法', () => {
 
       const result = restoreByIdAnchors(selectionData);
 
-      if (result) {
-        expect(window.__lastRestoredRange).toBeDefined();
-        if (window.__lastRestoredRange) {
-          const rangeText = window.__lastRestoredRange.toString();
+      if (result.success) {
+        expect(result.range).toBeDefined();
+        if (result.range) {
+          const rangeText = result.range.toString();
           // 验证文本长度和内容匹配
           expect(rangeText.length).toBeGreaterThan(0);
           expect(rangeText).toMatch(/1月15日|阅读时间|最新研究/);
@@ -554,8 +544,8 @@ describe('Layer 1: ID锚点恢复算法', () => {
       const executionTime = endTime - startTime;
       expect(executionTime).toBeLessThan(100); // 应该在100ms内完成
 
-      if (result) {
-        expect(window.__lastRestoredRange).toBeDefined();
+      if (result.success) {
+        expect(result.range).toBeDefined();
       }
     });
 
@@ -585,10 +575,10 @@ describe('Layer 1: ID锚点恢复算法', () => {
 
       const result = restoreByIdAnchors(selectionData);
 
-      if (result) {
-        expect(window.__lastRestoredRange).toBeDefined();
-        if (window.__lastRestoredRange) {
-          const rangeText = window.__lastRestoredRange.toString();
+      if (result.success) {
+        expect(result.range).toBeDefined();
+        if (result.range) {
+          const rangeText = result.range.toString();
           expect(rangeText).toMatch(/深度嵌套|文本内容|测试/);
         }
       }
@@ -624,10 +614,10 @@ describe('Layer 1: ID锚点恢复算法', () => {
 
       const result = restoreByIdAnchors(selectionData);
 
-      if (result) {
-        expect(window.__lastRestoredRange).toBeDefined();
-        if (window.__lastRestoredRange) {
-          const rangeText = window.__lastRestoredRange.toString();
+      if (result.success) {
+        expect(result.range).toBeDefined();
+        if (result.range) {
+          const rangeText = result.range.toString();
           expect(rangeText).toMatch(/文本段落/);
         }
       }
@@ -659,11 +649,11 @@ describe('Layer 1: ID锚点恢复算法', () => {
 
       const result = restoreByIdAnchors(selectionData);
 
-      expect(result).toBe(true);
-      expect(window.__lastRestoredRange).toBeDefined();
+      expect(result.success).toBe(true);
+      expect(result.range).toBeDefined();
 
-      if (window.__lastRestoredRange) {
-        const range = window.__lastRestoredRange;
+      if (result.range) {
+        const range = result.range;
 
         // 验证Range基本属性
         expect(range.collapsed).toBe(false);
@@ -707,11 +697,11 @@ describe('Layer 1: ID锚点恢复算法', () => {
 
       const result = restoreByIdAnchors(selectionData);
 
-      expect(result).toBe(true);
-      expect(window.__lastRestoredRange).toBeDefined();
+      expect(result.success).toBe(true);
+      expect(result.range).toBeDefined();
 
-      if (window.__lastRestoredRange) {
-        const range = window.__lastRestoredRange;
+      if (result.range) {
+        const range = result.range;
 
         // 测试Range的标准方法（在jsdom环境中，某些方法可能不可用）
         expect(typeof range.cloneContents).toBe('function');
@@ -757,9 +747,9 @@ describe('Layer 1: ID锚点恢复算法', () => {
         const result = restoreByIdAnchors(selectionData);
 
         if (result) {
-          expect(window.__lastRestoredRange).toBeDefined();
-          if (window.__lastRestoredRange) {
-            const range = window.__lastRestoredRange;
+          expect(result.range).toBeDefined();
+          if (result.range) {
+            const range = result.range;
 
             // 验证跨元素Range的特征
             expect(range.startContainer).toBeDefined();
@@ -796,15 +786,15 @@ describe('Layer 1: ID锚点恢复算法', () => {
 
       const result = restoreByIdAnchors(selectionData);
 
-      expect(result).toBe(true);
+      expect(result.success).toBe(true);
 
       // 验证使用的是getElementById查找的元素
       const startElement = document.getElementById('test-container-1');
       expect(startElement).toBeTruthy();
 
-      if (window.__lastRestoredRange) {
+      if (result.range) {
         // 验证Range的开始容器在正确的ID元素内
-        const range = window.__lastRestoredRange;
+        const range = result.range;
         expect(startElement!.contains(range.startContainer)).toBe(true);
       }
     });
@@ -830,9 +820,9 @@ describe('Layer 1: ID锚点恢复算法', () => {
         const result = restoreByIdAnchors(selectionData);
 
         if (result) {
-          expect(window.__lastRestoredRange).toBeDefined();
-          if (window.__lastRestoredRange) {
-            const range = window.__lastRestoredRange;
+          expect(result.range).toBeDefined();
+          if (result.range) {
+            const range = result.range;
             const rangeText = range.toString();
 
             // 验证TreeWalker正确找到了文本节点
@@ -866,9 +856,9 @@ describe('Layer 1: ID锚点恢复算法', () => {
         const result = restoreByIdAnchors(selectionData);
 
         if (result) {
-          expect(window.__lastRestoredRange).toBeDefined();
-          if (window.__lastRestoredRange) {
-            const range = window.__lastRestoredRange;
+          expect(result.range).toBeDefined();
+          if (result.range) {
+            const range = result.range;
             const rangeText = range.toString();
 
             // 验证即使有复杂的Unicode字符，也能精确匹配
@@ -922,11 +912,11 @@ describe('Layer 1: ID锚点恢复算法', () => {
 
       const result = restoreByIdAnchors(selectionData);
 
-      expect(result).toBe(true);
-      expect(window.__lastRestoredRange).toBeDefined();
+      expect(result.success).toBe(true);
+      expect(result.range).toBeDefined();
 
-      if (window.__lastRestoredRange) {
-        const rangeText = window.__lastRestoredRange.toString();
+      if (result.range) {
+        const rangeText = result.range.toString();
         expect(rangeText).toBe(targetText);
 
         // 验证包含关键复杂内容（注意：这个测试文本不包含"1,250亿元"）
@@ -957,11 +947,11 @@ describe('Layer 1: ID锚点恢复算法', () => {
 
         const result = restoreByIdAnchors(selectionData);
 
-        expect(result).toBe(true);
-        expect(window.__lastRestoredRange).toBeDefined();
+        expect(result.success).toBe(true);
+        expect(result.range).toBeDefined();
 
-        if (window.__lastRestoredRange) {
-          const rangeText = window.__lastRestoredRange.toString();
+        if (result.range) {
+          const rangeText = result.range.toString();
           expect(rangeText).toBe(targetText);
 
           // 验证财务符号正确处理
@@ -991,11 +981,11 @@ describe('Layer 1: ID锚点恢复算法', () => {
 
         const result = restoreByIdAnchors(selectionData);
 
-        expect(result).toBe(true);
-        expect(window.__lastRestoredRange).toBeDefined();
+        expect(result.success).toBe(true);
+        expect(result.range).toBeDefined();
 
-        if (window.__lastRestoredRange) {
-          const rangeText = window.__lastRestoredRange.toString();
+        if (result.range) {
+          const rangeText = result.range.toString();
           expect(rangeText).toBe(targetText);
 
           // 验证emoji和特殊符号
@@ -1026,11 +1016,11 @@ describe('Layer 1: ID锚点恢复算法', () => {
 
         const result = restoreByIdAnchors(selectionData);
 
-        expect(result).toBe(true);
-        expect(window.__lastRestoredRange).toBeDefined();
+        expect(result.success).toBe(true);
+        expect(result.range).toBeDefined();
 
-        if (window.__lastRestoredRange) {
-          const rangeText = window.__lastRestoredRange.toString();
+        if (result.range) {
+          const rangeText = result.range.toString();
           expect(rangeText).toBe(targetText);
 
           // 验证中英文混合内容
@@ -1061,11 +1051,11 @@ describe('Layer 1: ID锚点恢复算法', () => {
 
         const result = restoreByIdAnchors(selectionData);
 
-        expect(result).toBe(true);
-        expect(window.__lastRestoredRange).toBeDefined();
+        expect(result.success).toBe(true);
+        expect(result.range).toBeDefined();
 
-        if (window.__lastRestoredRange) {
-          const rangeText = window.__lastRestoredRange.toString();
+        if (result.range) {
+          const rangeText = result.range.toString();
           expect(rangeText).toBe(targetText);
 
           // 验证AI模型名称和测试指标
@@ -1097,11 +1087,11 @@ describe('Layer 1: ID锚点恢复算法', () => {
 
         const result = restoreByIdAnchors(selectionData);
 
-        expect(result).toBe(true);
-        expect(window.__lastRestoredRange).toBeDefined();
+        expect(result.success).toBe(true);
+        expect(result.range).toBeDefined();
 
-        if (window.__lastRestoredRange) {
-          const rangeText = window.__lastRestoredRange.toString();
+        if (result.range) {
+          const rangeText = result.range.toString();
           expect(rangeText).toBe(targetText);
 
           // 验证品牌名称的精确匹配（区分大小写）
@@ -1146,18 +1136,18 @@ describe('Layer 1: ID锚点恢复算法', () => {
 
       const result = restoreByIdAnchors(selectionData);
 
-      expect(result).toBe(true);
+      expect(result.success).toBe(true);
 
       // 验证Range对象被正确创建
-      expect(window.__lastRestoredRange).toBeDefined();
-      if (window.__lastRestoredRange) {
-        const restoredText = window.__lastRestoredRange.toString();
+      expect(result.range).toBeDefined();
+      if (result.range) {
+        const restoredText = result.range.toString();
         expect(restoredText).toBe(targetText);
 
         // 验证选区的起始和结束容器
         const testElement = document.querySelector('[data-selection-id="custom-test-1"]');
-        expect(testElement?.contains(window.__lastRestoredRange.startContainer)).toBe(true);
-        expect(testElement?.contains(window.__lastRestoredRange.endContainer)).toBe(true);
+        expect(testElement?.contains(result.range.startContainer)).toBe(true);
+        expect(testElement?.contains(result.range.endContainer)).toBe(true);
       }
     });
 
@@ -1184,12 +1174,12 @@ describe('Layer 1: ID锚点恢复算法', () => {
 
       const result = restoreByIdAnchors(selectionData);
 
-      expect(result).toBe(true);
+      expect(result.success).toBe(true);
 
       // 验证使用了正确的元素（通过自定义ID找到的）
-      if (window.__lastRestoredRange) {
+      if (result.range) {
         const foundElement = document.querySelector('[data-selection-id="custom-id-1"]');
-        expect(foundElement?.contains(window.__lastRestoredRange.startContainer)).toBe(true);
+        expect(foundElement?.contains(result.range.startContainer)).toBe(true);
       }
     });
 
@@ -1216,12 +1206,12 @@ describe('Layer 1: ID锚点恢复算法', () => {
 
       const result = restoreByIdAnchors(selectionData);
 
-      expect(result).toBe(true);
+      expect(result.success).toBe(true);
 
       // 验证回退到了标准ID
-      if (window.__lastRestoredRange) {
+      if (result.range) {
         const foundElement = document.getElementById('fallback-standard-id');
-        expect(foundElement?.contains(window.__lastRestoredRange.startContainer)).toBe(true);
+        expect(foundElement?.contains(result.range.startContainer)).toBe(true);
       }
     });
 
@@ -1251,10 +1241,10 @@ describe('Layer 1: ID锚点恢复算法', () => {
 
       const result = restoreByIdAnchors(selectionData);
 
-      expect(result).toBe(true);
+      expect(result.success).toBe(true);
 
-      if (window.__lastRestoredRange) {
-        const restoredText = window.__lastRestoredRange.toString();
+      if (result.range) {
+        const restoredText = result.range.toString();
         expect(restoredText).toBe(targetText);
       }
     });
@@ -1285,7 +1275,7 @@ describe('Layer 1: ID锚点恢复算法', () => {
 
       const result = restoreByIdAnchors(selectionData);
 
-      expect(result).toBe(false);
+      expect(result.success).toBe(false);
     });
   });
 
@@ -1311,8 +1301,8 @@ describe('Layer 1: ID锚点恢复算法', () => {
       const result = restoreByIdAnchors(selectionData);
 
       // 应该返回false但不抛出异常
-      expect(result).toBe(false);
-      expect(window.__lastRestoredRange).toBeUndefined();
+      expect(result.success).toBe(false);
+      expect(result.range).toBeUndefined();
 
       // 清理
       document.body.removeChild(emptyContainer);
@@ -1338,14 +1328,14 @@ describe('Layer 1: ID锚点恢复算法', () => {
 
       // 验证初始状态可以恢复
       let result = restoreByIdAnchors(selectionData);
-      expect(result).toBe(true);
+      expect(result.success).toBe(true);
 
       // 修改DOM结构
       dynamicContainer.innerHTML = '<span>修改后的文本内容</span>';
 
       // 尝试再次恢复，应该失败
       result = restoreByIdAnchors(selectionData);
-      expect(result).toBe(false);
+      expect(result.success).toBe(false);
 
       // 清理
       document.body.removeChild(dynamicContainer);

@@ -6,6 +6,7 @@
 
 import { logDebug } from '../../../debug/logger';
 import { getSemanticTags } from '../../helpers/l4-helpers';
+import { L4_CANDIDATE_LIMITS } from '../../../constants';
 
 /**
  * 查找结束元素候选
@@ -53,7 +54,7 @@ export function findEndElementCandidates(startElement: Element, multipleAnchors:
     ).join(' | '),
   });
 
-  return uniqueCandidates.slice(0, 15);
+  return uniqueCandidates.slice(0, L4_CANDIDATE_LIMITS.MAX_END_CANDIDATES);
 }
 
 /**
@@ -174,7 +175,7 @@ function findByLevelUp(
   let container = startElement.parentElement;
   let searchLevel = 0;
 
-  while (container && searchLevel < 6) {
+  while (container && searchLevel < L4_CANDIDATE_LIMITS.MAX_SEARCH_DEPTH) {
     const levelCandidates: Element[] = [];
 
     for (const searchTag of searchTags) {

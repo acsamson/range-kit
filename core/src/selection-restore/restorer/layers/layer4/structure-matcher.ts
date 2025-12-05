@@ -7,6 +7,11 @@
 import { SerializedSelection, ContainerConfig } from '../../../types';
 import { logDebug, logWarn } from '../../../debug/logger';
 import { getSemanticTags } from '../../helpers/l4-helpers';
+import {
+  L4_WEIGHT_ADJUSTMENTS,
+  L4_SIMILARITY_WEIGHTS,
+  L4_CANDIDATE_LIMITS,
+} from '../../../constants';
 
 /**
  * 结构匹配候选结果
@@ -77,7 +82,7 @@ export function findElementsByStructure(
     if (data?.textContext?.parentText) {
       const parentText = data.textContext.parentText.trim();
       if (parentText && elementText.includes(parentText)) {
-        similarity += 0.3;
+        similarity += L4_WEIGHT_ADJUSTMENTS.CROSS_ELEMENT_BONUS;
       }
     }
 
@@ -86,7 +91,7 @@ export function findElementsByStructure(
     if (elementTag !== targetTag) {
       const semanticTags = getSemanticTags(targetTag);
       if (semanticTags.includes(elementTag)) {
-        similarity *= 0.9;
+        similarity *= L4_WEIGHT_ADJUSTMENTS.SEMANTIC_TAG_PENALTY;
         logDebug('L4', `L4语义标签匹配：${targetTag} → ${elementTag}`, {
           originalSimilarity: (similarity / 0.9).toFixed(3),
           adjustedSimilarity: similarity.toFixed(3),
@@ -196,7 +201,7 @@ export function calculateParentChainSimilarity(element: Element, targetParentCha
   const elementParentChain: { tag: string; className: string }[] = [];
   let current = element.parentElement;
 
-  while (current && elementParentChain.length < Math.max(targetParentChain.length, 8)) {
+  while (current && elementParentChain.length < Math.max(targetParentChain.length, L4_CANDIDATE_LIMITS.MAX_PARENT_CHAIN_DEPTH)) {
     elementParentChain.push({
       tag: current.tagName.toLowerCase(),
       className: current.className || '',

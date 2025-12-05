@@ -487,5 +487,21 @@ export * from './storage';
 export * from './core';
 export { convertToSimple, convertSelectionsToSimple } from './utils';
 
+// 导出性能统计模块
+export {
+  enableMetrics,
+  disableMetrics,
+  isMetricsEnabled,
+  recordLayerAttempt,
+  recordRestoreResult,
+  getMetrics,
+  resetMetrics,
+  getMetricsReport,
+  getLayerDistribution,
+  type LayerMetrics,
+  type RestoreMetrics,
+  type LayerType,
+} from './restorer/metrics';
+
 // 默认导出
 export default SelectionRestore;

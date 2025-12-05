@@ -15,6 +15,7 @@
 import { SerializedSelection, ContainerConfig, LayerRestoreResult } from '../../types';
 import { applySelectionWithStrictValidation } from '../utils';
 import { logDebug, logWarn } from '../../debug/logger';
+import { L4_SIMILARITY_THRESHOLDS, L4_CANDIDATE_LIMITS } from '../../constants';
 
 // 导入子模块
 import {
@@ -63,10 +64,10 @@ export function restoreByStructuralFingerprint(
 
   // 结构匹配策略：从严格到宽松
   const matchingStrategies = [
-    { minSimilarity: 0.8, name: '高精度结构匹配' },
-    { minSimilarity: 0.6, name: '中等结构匹配' },
-    { minSimilarity: 0.4, name: '宽松结构匹配' },
-    { minSimilarity: 0.2, name: '最低结构匹配' },
+    { minSimilarity: L4_SIMILARITY_THRESHOLDS.HIGH_PRECISION, name: '高精度结构匹配' },
+    { minSimilarity: L4_SIMILARITY_THRESHOLDS.MEDIUM, name: '中等结构匹配' },
+    { minSimilarity: L4_SIMILARITY_THRESHOLDS.LOOSE, name: '宽松结构匹配' },
+    { minSimilarity: L4_SIMILARITY_THRESHOLDS.MINIMUM, name: '最低结构匹配' },
   ];
 
   for (const strategy of matchingStrategies) {
@@ -87,7 +88,7 @@ export function restoreByStructuralFingerprint(
       // 跨元素选区优先策略
       const prioritizedCandidates = prioritizeCrossElementCandidates(candidates, data);
 
-      for (let i = 0; i < Math.min(prioritizedCandidates.length, 15); i++) {
+      for (let i = 0; i < Math.min(prioritizedCandidates.length, L4_CANDIDATE_LIMITS.MAX_CANDIDATE_TESTS); i++) {
         const candidate = prioritizedCandidates[i];
         logDebug('L4', `L4测试候选元素 ${i + 1}/${prioritizedCandidates.length}`, {
           similarity: (candidate.similarity * 100).toFixed(1) + '%',

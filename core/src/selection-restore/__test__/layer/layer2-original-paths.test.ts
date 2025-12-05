@@ -4,28 +4,22 @@
  * ===================================================================
  *
  * 🎯 测试目标：
- * 验证基于DOM路径的选区恢复功能，确保L2算法的准确性和适应性
+ * 验证基于DOM路径的精确选区恢复功能
  *
  * 📋 测试覆盖：
  * 1. CSS选择器路径恢复（单元素和跨元素）
- * 2. 智能文本匹配策略（标准化文本处理）
- * 3. 跨元素选择恢复（共同父元素查找）
- * 4. 文本偏移量和TreeWalker精确定位
- * 5. 错误处理和路径失效场景
- * 6. 复杂DOM结构的适应性验证
+ * 2. 文本偏移量精确定位
+ * 3. 错误处理和路径失效场景
+ * 4. 根节点限定功能
+ *
+ * 注意：L2 只负责精确路径恢复，不进行文本匹配降级
+ * 文本匹配是 L3/L4 的职责
  * ===================================================================
  */
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { restoreByOriginalPaths } from '../../restorer/layers/layer2-original-paths';
-import { SerializedSelection } from '../../types';
-
-// 模拟全局Range存储
-declare global {
-  interface Window {
-    __lastRestoredRange?: Range;
-  }
-}
+import { SerializedSelection, LayerRestoreResult } from '../../types';
 
 describe('Layer 2: DOM路径恢复算法', () => {
   describe('🆕 根节点限定功能测试', () => {
@@ -49,10 +43,10 @@ describe('Layer 2: DOM路径恢复算法', () => {
         paths: {
           startPath: 'section.l2-test-section > p.l2-test-paragraph',
           endPath: 'section.l2-test-section > p.l2-test-paragraph',
-          startOffset: 0,
-          endOffset: 0,
-          startTextOffset: 0,
-          endTextOffset: 0,
+          startOffset: 8, // "这是Layer2" = 8个字符
+          endOffset: 15, // "根节点限定测试" = 7个字符，8+7=15
+          startTextOffset: 8,
+          endTextOffset: 15,
         },
         multipleAnchors: {
           startAnchors: { tagName: '', className: '', id: '', attributes: {} },
@@ -87,8 +81,8 @@ describe('Layer 2: DOM路径恢复算法', () => {
 
       const result = restoreByOriginalPaths(selectionData, containerConfig);
 
-      expect(result).toBe(true);
-      expect(window.__lastRestoredRange).toBeDefined();
+      expect(result.success).toBe(true);
+      expect(result.range).toBeDefined();
 
       // 清理测试元素
       document.body.removeChild(rootNode);
@@ -141,11 +135,11 @@ describe('Layer 2: DOM路径恢复算法', () => {
 
       const result = restoreByOriginalPaths(selectionData, containerConfig);
 
-      expect(result).toBe(true);
-      expect(window.__lastRestoredRange).toBeDefined();
+      expect(result.success).toBe(true);
+      expect(result.range).toBeDefined();
 
-      if (window.__lastRestoredRange) {
-        const rangeText = window.__lastRestoredRange.toString();
+      if (result.range) {
+        const rangeText = result.range.toString();
         expect(rangeText).toBe(targetText);
       }
     });
@@ -229,9 +223,6 @@ describe('Layer 2: DOM路径恢复算法', () => {
     `;
 
     document.body.appendChild(container);
-
-    // 清除全局Range存储
-    delete window.__lastRestoredRange;
   });
 
   afterEach(() => {
@@ -239,7 +230,6 @@ describe('Layer 2: DOM路径恢复算法', () => {
     if (container.parentNode) {
       document.body.removeChild(container);
     }
-    delete window.__lastRestoredRange;
   });
 
   // 基于layer2.ts示例数据创建测试数据
@@ -321,36 +311,37 @@ describe('Layer 2: DOM路径恢复算法', () => {
 
       const result = restoreByOriginalPaths(selectionData);
 
-      expect(result).toBe(true);
-      expect(window.__lastRestoredRange).toBeDefined();
+      expect(result.success).toBe(true);
+      expect(result.range).toBeDefined();
 
-      if (window.__lastRestoredRange) {
-        const rangeText = window.__lastRestoredRange.toString();
+      if (result.range) {
+        const rangeText = result.range.toString();
         expect(rangeText).toBe('🤖 人工智能');
       }
     });
 
-    it('应该成功恢复跨元素的复杂文本选区', () => {
+    it('应该成功恢复单元素内的部分文本选区', () => {
+      // DOM 中 span.text-segment-end 的内容是 "和自动驾驶领域发挥重要作用。" (15个字符)
       const selectionData = createTestSelection({
-        text: '和自动驾驶领域发挥重要作用。',
+        text: '自动驾驶领域',
         paths: {
           startPath: 'div#rc-tabs-1-panel-2 > section.l2-pure-test-environment > article.l2-article-one > div.content-wrapper > main.content-main > p.description > span.text-segment-end',
           endPath: 'div#rc-tabs-1-panel-2 > section.l2-pure-test-environment > article.l2-article-one > div.content-wrapper > main.content-main > p.description > span.text-segment-end',
-          startOffset: 0,
-          endOffset: 15,
-          startTextOffset: 0,
-          endTextOffset: 15,
+          startOffset: 1, // "和" 之后
+          endOffset: 7, // "自动驾驶领域" 结束
+          startTextOffset: 1,
+          endTextOffset: 7,
         },
       });
 
       const result = restoreByOriginalPaths(selectionData);
 
-      expect(result).toBe(true);
-      expect(window.__lastRestoredRange).toBeDefined();
+      expect(result.success).toBe(true);
+      expect(result.range).toBeDefined();
 
-      if (window.__lastRestoredRange) {
-        const rangeText = window.__lastRestoredRange.toString();
-        expect(rangeText).toBe('和自动驾驶领域发挥重要作用。');
+      if (result.range) {
+        const rangeText = result.range.toString();
+        expect(rangeText).toBe('自动驾驶领域');
       }
     });
 
@@ -369,11 +360,11 @@ describe('Layer 2: DOM路径恢复算法', () => {
 
       const result = restoreByOriginalPaths(selectionData);
 
-      expect(result).toBe(true);
-      expect(window.__lastRestoredRange).toBeDefined();
+      expect(result.success).toBe(true);
+      expect(result.range).toBeDefined();
 
-      if (window.__lastRestoredRange) {
-        const rangeText = window.__lastRestoredRange.toString();
+      if (result.range) {
+        const rangeText = result.range.toString();
         expect(rangeText).toBe('预期影响：计算性能提升1000倍以上');
       }
     });
@@ -393,36 +384,37 @@ describe('Layer 2: DOM路径恢复算法', () => {
 
       const result = restoreByOriginalPaths(selectionData);
 
-      expect(result).toBe(true);
-      expect(window.__lastRestoredRange).toBeDefined();
+      expect(result.success).toBe(true);
+      expect(result.range).toBeDefined();
 
-      if (window.__lastRestoredRange) {
-        const rangeText = window.__lastRestoredRange.toString();
+      if (result.range) {
+        const rangeText = result.range.toString();
         expect(rangeText).toBe('人工智能技术的快速发展正在深刻改变着我们的生活方式和工作模式');
       }
     });
 
     it('应该支持CSS选择器路径', () => {
+      // 这个测试使用简短的 CSS 选择器路径
       const selectionData = createTestSelection({
-        text: '🤖 人工智能',
+        text: '人工智能',
         paths: {
           startPath: '#rc-tabs-1-panel-2 .category-badge',
           endPath: '#rc-tabs-1-panel-2 .category-badge',
-          startOffset: 0,
-          endOffset: 7,
-          startTextOffset: 0,
+          startOffset: 3, // emoji "🤖 " 之后 (emoji 占2字节 + 空格1字节)
+          endOffset: 7, // "人工智能" 结束
+          startTextOffset: 3,
           endTextOffset: 7,
         },
       });
 
       const result = restoreByOriginalPaths(selectionData);
 
-      expect(result).toBe(true);
-      expect(window.__lastRestoredRange).toBeDefined();
+      expect(result.success).toBe(true);
+      expect(result.range).toBeDefined();
 
-      if (window.__lastRestoredRange) {
-        const rangeText = window.__lastRestoredRange.toString();
-        expect(rangeText).toBe('🤖 人工智能');
+      if (result.range) {
+        const rangeText = result.range.toString();
+        expect(rangeText).toBe('人工智能');
       }
     });
   });
@@ -443,8 +435,8 @@ describe('Layer 2: DOM路径恢复算法', () => {
 
       const result = restoreByOriginalPaths(selectionData);
 
-      expect(result).toBe(false);
-      expect(window.__lastRestoredRange).toBeUndefined();
+      expect(result.success).toBe(false);
+      expect(result.range).toBeUndefined();
     });
 
     it('应该处理缺少路径信息的情况', () => {
@@ -462,8 +454,8 @@ describe('Layer 2: DOM路径恢复算法', () => {
 
       const result = restoreByOriginalPaths(selectionData);
 
-      expect(result).toBe(false);
-      expect(window.__lastRestoredRange).toBeUndefined();
+      expect(result.success).toBe(false);
+      expect(result.range).toBeUndefined();
     });
 
     it('应该处理文本不匹配的情况', () => {
@@ -481,8 +473,8 @@ describe('Layer 2: DOM路径恢复算法', () => {
 
       const result = restoreByOriginalPaths(selectionData);
 
-      expect(result).toBe(false);
-      expect(window.__lastRestoredRange).toBeUndefined();
+      expect(result.success).toBe(false);
+      expect(result.range).toBeUndefined();
     });
 
     it('应该处理无效的XPath语法', () => {
@@ -500,8 +492,8 @@ describe('Layer 2: DOM路径恢复算法', () => {
 
       const result = restoreByOriginalPaths(selectionData);
 
-      expect(result).toBe(false);
-      expect(window.__lastRestoredRange).toBeUndefined();
+      expect(result.success).toBe(false);
+      expect(result.range).toBeUndefined();
     });
 
     it('应该处理部分路径失效的情况', () => {
@@ -519,8 +511,8 @@ describe('Layer 2: DOM路径恢复算法', () => {
 
       const result = restoreByOriginalPaths(selectionData);
 
-      expect(result).toBe(false);
-      expect(window.__lastRestoredRange).toBeUndefined();
+      expect(result.success).toBe(false);
+      expect(result.range).toBeUndefined();
     });
   });
 
@@ -540,8 +532,8 @@ describe('Layer 2: DOM路径恢复算法', () => {
 
       const result = restoreByOriginalPaths(selectionData);
 
-      expect(result).toBe(false);
-      expect(window.__lastRestoredRange).toBeUndefined();
+      expect(result.success).toBe(false);
+      expect(result.range).toBeUndefined();
     });
 
     it('应该处理单字符选区', () => {
@@ -559,35 +551,37 @@ describe('Layer 2: DOM路径恢复算法', () => {
 
       const result = restoreByOriginalPaths(selectionData);
 
-      expect(result).toBe(true);
-      expect(window.__lastRestoredRange).toBeDefined();
+      expect(result.success).toBe(true);
+      expect(result.range).toBeDefined();
 
-      if (window.__lastRestoredRange) {
-        const rangeText = window.__lastRestoredRange.toString();
+      if (result.range) {
+        const rangeText = result.range.toString();
         expect(rangeText).toBe('🤖');
       }
     });
 
     it('应该处理包含特殊字符的文本', () => {
+      // DOM 中 div.tech-keywords 的内容是 "核心技术关键词：神经网络、机器学习、深度学习、智能算法、计算机视觉、自然语言处理"
+      // "核心技术关键词：" 有 8 个字符
       const selectionData = createTestSelection({
         text: '神经网络、机器学习、深度学习',
         paths: {
           startPath: 'div#rc-tabs-1-panel-2 > section.l2-pure-test-environment > article.l2-article-one > div.content-wrapper > main.content-main > div.tech-keywords',
           endPath: 'div#rc-tabs-1-panel-2 > section.l2-pure-test-environment > article.l2-article-one > div.content-wrapper > main.content-main > div.tech-keywords',
-          startOffset: 0,
-          endOffset: 15,
-          startTextOffset: 0,
-          endTextOffset: 15,
+          startOffset: 8, // "核心技术关键词：" 之后
+          endOffset: 22, // "神经网络、机器学习、深度学习" 结束
+          startTextOffset: 8,
+          endTextOffset: 22,
         },
       });
 
       const result = restoreByOriginalPaths(selectionData);
 
-      expect(result).toBe(true);
-      expect(window.__lastRestoredRange).toBeDefined();
+      expect(result.success).toBe(true);
+      expect(result.range).toBeDefined();
 
-      if (window.__lastRestoredRange) {
-        const rangeText = window.__lastRestoredRange.toString();
+      if (result.range) {
+        const rangeText = result.range.toString();
         expect(rangeText).toContain('神经网络');
         expect(rangeText).toContain('机器学习');
       }
@@ -615,14 +609,15 @@ describe('Layer 2: DOM路径恢复算法', () => {
       const endTime = performance.now();
       const duration = endTime - startTime;
 
-      expect(result).toBe(true);
+      expect(result.success).toBe(true);
       expect(duration).toBeLessThan(100); // 应该在100ms内完成
     });
   });
 
   describe('📊 真实数据验证测试', () => {
     // 基于layer2.ts示例数据的真实场景测试
-    it('应该恢复layer2.ts示例1：人工智能跨元素选择', () => {
+    it('应该恢复人工智能标签选择', () => {
+      // span.category-badge 内容是 "🤖 人工智能"
       const selectionData = createTestSelection({
         id: 'sel_1750245506905_21ntvrbvf',
         text: '🤖 人工智能',
@@ -630,7 +625,7 @@ describe('Layer 2: DOM路径恢复算法', () => {
           startPath: 'div#rc-tabs-1-panel-2 > section.l2-pure-test-environment > article.l2-article-one > div.content-wrapper > header.content-header > span.category-badge',
           endPath: 'div#rc-tabs-1-panel-2 > section.l2-pure-test-environment > article.l2-article-one > div.content-wrapper > header.content-header > span.category-badge',
           startOffset: 0,
-          endOffset: 7,
+          endOffset: 7, // 🤖(2) + 空格(1) + 人工智能(4) = 7
           startTextOffset: 0,
           endTextOffset: 7,
         },
@@ -638,39 +633,38 @@ describe('Layer 2: DOM路径恢复算法', () => {
 
       const result = restoreByOriginalPaths(selectionData);
 
-      expect(result).toBe(true);
-      expect(window.__lastRestoredRange).toBeDefined();
+      expect(result.success).toBe(true);
+      expect(result.range).toBeDefined();
 
-      if (window.__lastRestoredRange) {
-        const rangeText = window.__lastRestoredRange.toString();
+      if (result.range) {
+        const rangeText = result.range.toString();
         expect(rangeText).toBe('🤖 人工智能');
       }
     });
 
-    it('应该恢复layer2.ts示例5：医疗健康领域长文本选择', () => {
+    it('应该恢复连续文本区域部分选择', () => {
+      // 连续文本区域的前30个字符
       const selectionData = createTestSelection({
-        id: 'sel_1750245572881_o135l9bc2',
-        text: '来越重要的作用。智能诊断系统能够通过分析医学影像快速识别病灶，辅助医生进行精准诊断。药物研发过程中，机器学习算法可以预测分子结构的活性，大大加速新药开发的进程。个性化治疗方案的制定也得益于AI对患者数据的深度分析和模式识别能力。自动驾驶汽车是AI技术应用的另一个重要领域。通过融合激光雷达、摄像头、GPS等多种传感器数据，智能车辆能够实时感知周围环境，做',
+        id: 'sel_continuous_text_partial',
+        text: '人工智能技术的快速发展正在深刻改变着我们的生活方式和工作模式',
         paths: {
           startPath: 'div#rc-tabs-1-panel-2 > section.l2-pure-test-environment > section.l2-pure-text-area > div.continuous-text-block',
           endPath: 'div#rc-tabs-1-panel-2 > section.l2-pure-test-environment > section.l2-pure-text-area > div.continuous-text-block',
-          startOffset: 17,
-          endOffset: 63,
-          startTextOffset: 163,
-          endTextOffset: 340,
+          startOffset: 0,
+          endOffset: 30,
+          startTextOffset: 0,
+          endTextOffset: 30,
         },
       });
 
       const result = restoreByOriginalPaths(selectionData);
 
-      expect(result).toBe(true);
-      expect(window.__lastRestoredRange).toBeDefined();
+      expect(result.success).toBe(true);
+      expect(result.range).toBeDefined();
 
-      if (window.__lastRestoredRange) {
-        const rangeText = window.__lastRestoredRange.toString();
-        expect(rangeText).toContain('智能诊断系统');
-        expect(rangeText).toContain('自动驾驶汽车');
-        expect(rangeText.length).toBeGreaterThan(100);
+      if (result.range) {
+        const rangeText = result.range.toString();
+        expect(rangeText).toBe('人工智能技术的快速发展正在深刻改变着我们的生活方式和工作模式');
       }
     });
 
@@ -690,26 +684,29 @@ describe('Layer 2: DOM路径恢复算法', () => {
 
       const result = restoreByOriginalPaths(selectionData);
 
-      expect(result).toBe(true);
-      expect(window.__lastRestoredRange).toBeDefined();
+      expect(result.success).toBe(true);
+      expect(result.range).toBeDefined();
 
-      if (window.__lastRestoredRange) {
-        const rangeText = window.__lastRestoredRange.toString();
+      if (result.range) {
+        const rangeText = result.range.toString();
         expect(rangeText).toBe('神经网络、机器学习、深度学习');
       }
     });
   });
 
-  describe('🔥 复杂文本智能匹配测试', () => {
+  describe('🔥 偏移量精确恢复测试', () => {
+    let complexContainer: HTMLDivElement;
+    const testText = 'ABCDEFGHIJ1234567890中文测试文本内容';
+
     beforeEach(() => {
-      // 添加包含复杂文本的测试环境，使用更简单的DOM结构
-      const complexContainer = document.createElement('div');
+      // 添加包含简单可预测文本的测试环境
+      complexContainer = document.createElement('div');
       complexContainer.innerHTML = `
         <div id="rc-tabs-1-panel-3" class="ant-tabs-tabpane ant-tabs-tabpane-active">
           <section class="complex-text-section">
             <article class="complex-article">
               <div class="complex-content">
-                <p class="complex-paragraph">人工智能芯片投资额达1,250亿元，增长率68%。智能制造设备投资890亿元，增长率42%。机器人技术投资670亿元，增长率35%。这些数据显示AI产业正在快速发展，各大科技公司纷纷加大投入。深度学习、机器视觉、自然语言处理等技术不断突破，ChatGPT、GPT-4等大语言模型引领了新一轮AI革命，推动了整个产业的快速发展。</p>
+                <p class="complex-paragraph">${testText}</p>
               </div>
             </article>
           </section>
@@ -718,146 +715,123 @@ describe('Layer 2: DOM路径恢复算法', () => {
       container.appendChild(complexContainer);
     });
 
-    it('应该通过智能文本匹配恢复包含数字和特殊符号的复杂文本', () => {
-      // 测试包含千分位逗号、百分号、中英文混合的复杂文本
+    it('应该使用正确的偏移量恢复文本前部', () => {
+      // 测试从开始选择 "ABCDEFGHIJ" (0-10)
       const selectionData = createTestSelection({
-        id: 'sel_complex_numbers_and_symbols',
-        text: '增长率35%。这些数据显示AI产业正在快速发展，各大科技公司纷纷加大投入。深度学习、机器视觉、自然语言处理等技术不断突破，ChatGPT、GPT-4等大语言模型引领了新一轮AI革命，推动了整个产业的快速发展。',
+        id: 'sel_front_text',
+        text: 'ABCDEFGHIJ',
         paths: {
           startPath: 'div#rc-tabs-1-panel-3 > section.complex-text-section > article.complex-article > div.complex-content > p.complex-paragraph',
           endPath: 'div#rc-tabs-1-panel-3 > section.complex-text-section > article.complex-article > div.complex-content > p.complex-paragraph',
           startOffset: 0,
-          endOffset: 104,
-          startTextOffset: 59,
-          endTextOffset: 163,
+          endOffset: 10,
+          startTextOffset: 0,
+          endTextOffset: 10,
         },
       });
 
       const result = restoreByOriginalPaths(selectionData);
 
-      expect(result).toBe(true);
-      expect(window.__lastRestoredRange).toBeDefined();
+      expect(result.success).toBe(true);
+      expect(result.range).toBeDefined();
 
-      if (window.__lastRestoredRange) {
-        const rangeText = window.__lastRestoredRange.toString();
-        expect(rangeText).toBe(selectionData.text);
-
-        // 验证包含关键内容
-        expect(rangeText).toContain('增长率35%');
-        expect(rangeText).toContain('ChatGPT');
-        expect(rangeText).toContain('GPT-4');
-        expect(rangeText).toContain('AI产业');
+      if (result.range) {
+        const rangeText = result.range.toString();
+        expect(rangeText).toBe('ABCDEFGHIJ');
       }
     });
 
-    it('应该处理原始偏移量失效后的智能降级恢复', () => {
-      // 模拟偏移量不准确的情况，依赖智能文本匹配
+    it('当偏移量错误时应该返回失败（不进行文本匹配降级）', () => {
+      // 使用错误的偏移量，验证 L2 不进行降级
       const selectionData = createTestSelection({
         id: 'sel_offset_fallback_test',
-        text: '人工智能芯片投资额达1,250亿元，增长率68%',
+        text: 'ABCDEFGHIJ',
         paths: {
           startPath: 'div#rc-tabs-1-panel-3 > section.complex-text-section > article.complex-article > div.complex-content > p.complex-paragraph',
           endPath: 'div#rc-tabs-1-panel-3 > section.complex-text-section > article.complex-article > div.complex-content > p.complex-paragraph',
           startOffset: 9999, // 故意使用错误的偏移量
           endOffset: 9999,
           startTextOffset: 0,
-          endTextOffset: 21,
+          endTextOffset: 10,
         },
       });
 
       const result = restoreByOriginalPaths(selectionData);
 
-      expect(result).toBe(true);
-      expect(window.__lastRestoredRange).toBeDefined();
-
-      if (window.__lastRestoredRange) {
-        const rangeText = window.__lastRestoredRange.toString();
-        expect(rangeText).toBe(selectionData.text);
-
-        // 验证智能匹配成功找到了正确的文本
-        expect(rangeText).toContain('1,250亿元');
-        expect(rangeText).toContain('68%');
-      }
+      // L2 现在不进行文本匹配降级，应该返回失败
+      expect(result.success).toBe(false);
     });
 
-    it('应该处理包含品牌名称和英文的中英文混合文本', () => {
+    it('应该使用正确的偏移量恢复数字部分', () => {
+      // 测试选择 "1234567890" (10-20)
       const selectionData = createTestSelection({
-        id: 'sel_mixed_language_brands',
-        text: 'ChatGPT、GPT-4等大语言模型引领了新一轮AI革命',
+        id: 'sel_numbers',
+        text: '1234567890',
         paths: {
           startPath: 'div#rc-tabs-1-panel-3 > section.complex-text-section > article.complex-article > div.complex-content > p.complex-paragraph',
           endPath: 'div#rc-tabs-1-panel-3 > section.complex-text-section > article.complex-article > div.complex-content > p.complex-paragraph',
-          startOffset: 0,
-          endOffset: 26,
-          startTextOffset: 137,
-          endTextOffset: 163,
+          startOffset: 10,
+          endOffset: 20,
+          startTextOffset: 10,
+          endTextOffset: 20,
         },
       });
 
       const result = restoreByOriginalPaths(selectionData);
 
-      expect(result).toBe(true);
-      expect(window.__lastRestoredRange).toBeDefined();
+      expect(result.success).toBe(true);
+      expect(result.range).toBeDefined();
 
-      if (window.__lastRestoredRange) {
-        const rangeText = window.__lastRestoredRange.toString();
-        expect(rangeText).toBe(selectionData.text);
-
-        // 验证品牌名称正确匹配
-        expect(rangeText).toContain('ChatGPT');
-        expect(rangeText).toContain('GPT-4');
-        expect(rangeText).toContain('AI革命');
+      if (result.range) {
+        const rangeText = result.range.toString();
+        expect(rangeText).toBe('1234567890');
       }
     });
 
-    it('应该处理包含专业术语和技术词汇的文本', () => {
+    it('应该使用正确的偏移量恢复中文部分', () => {
+      // 测试选择 "中文测试文本内容" (20-28)
       const selectionData = createTestSelection({
-        id: 'sel_technical_terms',
-        text: '深度学习、机器视觉、自然语言处理等技术不断突破',
+        id: 'sel_chinese',
+        text: '中文测试文本内容',
         paths: {
           startPath: 'div#rc-tabs-1-panel-3 > section.complex-text-section > article.complex-article > div.complex-content > p.complex-paragraph',
           endPath: 'div#rc-tabs-1-panel-3 > section.complex-text-section > article.complex-article > div.complex-content > p.complex-paragraph',
-          startOffset: 0,
-          endOffset: 24,
-          startTextOffset: 113,
-          endTextOffset: 137,
+          startOffset: 20,
+          endOffset: 28,
+          startTextOffset: 20,
+          endTextOffset: 28,
         },
       });
 
       const result = restoreByOriginalPaths(selectionData);
 
-      expect(result).toBe(true);
-      expect(window.__lastRestoredRange).toBeDefined();
+      expect(result.success).toBe(true);
+      expect(result.range).toBeDefined();
 
-      if (window.__lastRestoredRange) {
-        const rangeText = window.__lastRestoredRange.toString();
-        expect(rangeText).toBe(selectionData.text);
-
-        // 验证技术术语正确识别
-        expect(rangeText).toContain('深度学习');
-        expect(rangeText).toContain('机器视觉');
-        expect(rangeText).toContain('自然语言处理');
+      if (result.range) {
+        const rangeText = result.range.toString();
+        expect(rangeText).toBe('中文测试文本内容');
       }
     });
 
     it('应该在文本不存在时正确返回失败', () => {
       const selectionData = createTestSelection({
         id: 'sel_non_existent_complex_text',
-        text: '这是完全不存在的复杂文本，包含数字123和符号@#$%',
+        text: '这是完全不存在的复杂文本XYZ',
         paths: {
           startPath: 'div#rc-tabs-1-panel-3 > section.complex-text-section > article.complex-article > div.complex-content > p.complex-paragraph',
           endPath: 'div#rc-tabs-1-panel-3 > section.complex-text-section > article.complex-article > div.complex-content > p.complex-paragraph',
           startOffset: 0,
-          endOffset: 30,
+          endOffset: 15,
           startTextOffset: 0,
-          endTextOffset: 30,
+          endTextOffset: 15,
         },
       });
 
       const result = restoreByOriginalPaths(selectionData);
 
-      expect(result).toBe(false);
-      expect(window.__lastRestoredRange).toBeUndefined();
+      expect(result.success).toBe(false);
+      expect(result.range).toBeUndefined();
     });
   });
 });
