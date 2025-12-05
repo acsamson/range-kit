@@ -7,9 +7,7 @@ import {
   SelectionRestoreAPI,
   SelectionRestoreOptions,
   SerializedSelection,
-  SerializedSelectionSimple,
   RestoreResult,
-  SelectionStats,
   HighlightStyle,
   SelectionTypeConfig,
 } from './types';
@@ -17,10 +15,9 @@ import {
 import { SelectionValidator } from './core/selection-validator';
 import { SelectionSerializerWrapper } from './core/selection-serializer';
 import { SelectionRestorer } from './core/selection-restorer';
-import { SelectionStorage } from './core/selection-storage';
-import { SelectionHighlighter } from './core/selection-highlighter';
+import { SelectionHighlighter, createHighlighter } from './core/selection-highlighter';
 import { SelectionText } from './core/selection-text';
-import { SelectionManager } from './manager/selection-manager';
+import { SelectionInstanceManager } from './manager/selection-instance-manager';
 
 import {
   logInfo,
@@ -41,7 +38,6 @@ import { detectOverlappingSelections, detectRangeOverlap } from './helpers/overl
 // 导入 API 子模块
 import * as CoreAPI from './api/core-api';
 import * as BatchAPI from './api/batch-api';
-import * as StorageAPI from './api/storage-api';
 import * as SelectionAPI from './api/selection-api';
 
 // 导出重叠检测相关
@@ -52,16 +48,31 @@ export type { OverlappedRange } from './helpers/overlap-detector';
 type SimpleDebugLogEntry = DebugLogEntry;
 
 /**
- * 主要的Selection Restore API实现
+ * Selection Restore API 实现
+ *
+ * 无状态设计（Stateless）：
+ * - SDK 只负责 Range <-> JSON 的转换和 DOM 操作
+ * - 不内置存储功能，数据持久化由应用层负责
+ *
+ * 工作流示例：
+ * ```typescript
+ * // 序列化：Range -> JSON
+ * const json = await sdk.serialize();
+ *
+ * // 应用层存储（自行决定存储方式）
+ * await myDatabase.save(json);
+ *
+ * // 恢复：JSON -> Range + 高亮
+ * await sdk.restore(json);
+ * ```
  */
 export class SelectionRestore implements SelectionRestoreAPI {
   private validator: SelectionValidator;
   private serializer: SelectionSerializerWrapper;
   private restorer: SelectionRestorer;
-  private storage: SelectionStorage;
   private highlighter: SelectionHighlighter;
   private textSearcher: SelectionText;
-  private selectionManager: SelectionManager;
+  private selectionManager: SelectionInstanceManager;
   private options: Required<SelectionRestoreOptions>;
 
   // 助手模块
@@ -96,14 +107,23 @@ export class SelectionRestore implements SelectionRestoreAPI {
       rootNodeId: this.options.rootNodeId,
     });
 
-    this.storage = new SelectionStorage({
-      storage: this.options.storage,
-    });
+    // 不再初始化内置存储，遵循无状态设计
 
-    this.highlighter = new SelectionHighlighter(this.options.highlightStyle);
+    // 依赖注入：优先使用用户提供的高亮器，否则创建默认高亮器
+    if (this.options.highlighter) {
+      // 用户提供了自定义高亮器，直接包装使用
+      this.highlighter = new SelectionHighlighter({
+        highlighter: this.options.highlighter,
+        defaultStyle: this.options.highlightStyle,
+      });
+    } else {
+      // 使用默认的 CSSBasedHighlighter
+      this.highlighter = new SelectionHighlighter(this.options.highlightStyle);
+    }
+
     this.textSearcher = new SelectionText();
 
-    this.selectionManager = new SelectionManager(
+    this.selectionManager = new SelectionInstanceManager(
       this.highlighter.getHighlighter(),
       this.options,
     );
@@ -134,7 +154,7 @@ export class SelectionRestore implements SelectionRestoreAPI {
     });
     this.selectionBehaviorMonitor.initialize();
 
-    logInfo('api', 'Selection Restore API 已初始化', this.options);
+    logInfo('api', 'Selection Restore API 已初始化（无状态模式）', this.options);
   }
 
   // ========== 获取依赖对象的私有方法 ==========
@@ -144,7 +164,6 @@ export class SelectionRestore implements SelectionRestoreAPI {
       validator: this.validator,
       serializer: this.serializer,
       restorer: this.restorer,
-      storage: this.storage,
       highlighter: this.highlighter,
       selectionManager: this.selectionManager,
       options: this.options,
@@ -164,13 +183,6 @@ export class SelectionRestore implements SelectionRestoreAPI {
     };
   }
 
-  private getStorageAPIDeps(): StorageAPI.StorageAPIDependencies {
-    return {
-      storage: this.storage,
-      selectionManager: this.selectionManager,
-    };
-  }
-
   private getSelectionAPIDeps(): SelectionAPI.SelectionAPIDependencies {
     return {
       validator: this.validator,
@@ -179,71 +191,54 @@ export class SelectionRestore implements SelectionRestoreAPI {
     };
   }
 
-  // ========== 核心 API 方法 ==========
+  // ========== 核心 API 方法（无状态设计） ==========
 
+  /**
+   * 序列化当前选区为 JSON（不自动存储）
+   * 应用层需要自行决定如何存储返回的数据
+   */
   async serialize(id?: string): Promise<SerializedSelection | null> {
     return CoreAPI.serialize(this.getCoreAPIDeps(), id);
   }
 
+  /**
+   * 从 JSON 恢复选区并应用高亮
+   * @param data - 序列化的选区数据（必须是完整的对象，不再支持通过 ID 查询）
+   */
   async restore(
-    data: SerializedSelection | string,
+    data: SerializedSelection,
     clearPrevious: boolean = true,
     autoScroll: boolean = true,
   ): Promise<RestoreResult> {
     return CoreAPI.restore(this.getCoreAPIDeps(), data, clearPrevious, autoScroll);
   }
 
+  /**
+   * 恢复选区但不清除之前的高亮
+   */
   async restoreWithoutClear(
-    data: SerializedSelection | string,
+    data: SerializedSelection,
     autoScroll: boolean = true,
   ): Promise<RestoreResult> {
     return CoreAPI.restoreWithoutClear(this.getCoreAPIDeps(), data, autoScroll);
   }
 
+  /**
+   * 纯恢复方法：只恢复选区并返回 Range，不应用高亮
+   */
   async restoreRangeOnly(data: SerializedSelection): Promise<RestoreResult> {
     return CoreAPI.restoreRangeOnly(this.getCoreAPIDeps(), data);
   }
 
-  // ========== 存储 API 方法 ==========
+  // ========== 内存管理 API（非持久化存储） ==========
+  // 这些方法操作的是内存中的选区实例，用于交互检测和高亮管理
+  // 不是持久化存储，页面刷新后数据丢失
 
+  /**
+   * 获取所有当前活跃的选区数据（内存中的）
+   */
   async getAllSelections(): Promise<SerializedSelection[]> {
-    return StorageAPI.getAllSelections(this.getStorageAPIDeps());
-  }
-
-  async getAllSelectionsSimple(): Promise<SerializedSelectionSimple[]> {
-    return StorageAPI.getAllSelectionsSimple(this.getStorageAPIDeps());
-  }
-
-  async deleteSelection(id: string): Promise<void> {
-    return StorageAPI.deleteSelection(this.getStorageAPIDeps(), id);
-  }
-
-  async clearAllSelections(): Promise<void> {
-    return StorageAPI.clearAllSelections(this.getStorageAPIDeps());
-  }
-
-  async updateSelection(id: string, updates: Partial<SerializedSelection>): Promise<void> {
-    return StorageAPI.updateSelection(this.getStorageAPIDeps(), id, updates);
-  }
-
-  async importSelections(selections: SerializedSelection[]): Promise<{
-    success: number;
-    total: number;
-    errors: string[];
-  }> {
-    return StorageAPI.importSelections(this.getStorageAPIDeps(), selections);
-  }
-
-  async getStats(): Promise<SelectionStats> {
-    return StorageAPI.getStats(this.getStorageAPIDeps());
-  }
-
-  async exportData(): Promise<string> {
-    return StorageAPI.exportData(this.getStorageAPIDeps());
-  }
-
-  async importData(jsonData: string): Promise<number> {
-    return StorageAPI.importData(this.getStorageAPIDeps(), jsonData);
+    return this.selectionManager.getAllSelections();
   }
 
   // ========== 批量操作 API 方法 ==========
@@ -438,7 +433,7 @@ export class SelectionRestore implements SelectionRestoreAPI {
     this.selectionBehaviorMonitor.destroy();
     this.textHighlightManager.destroy();
     this.highlighter.destroy();
-    this.storage.close();
+    // 不再需要关闭存储，因为已移除内置存储
     logInfo('api', 'Selection Restore API 已销毁');
   }
 }
@@ -472,11 +467,15 @@ export {
   setCustomIdConfig,
 } from './serializer/serializer';
 export { restoreSelection } from './restorer/restorer';
-export { SelectionManager } from './manager/selection-manager';
+// 导出选区实例管理器（使用新名称）
+export { SelectionInstanceManager } from './manager/selection-instance-manager';
+// 保留旧名称别名，向后兼容
+export { SelectionInstanceManager as SelectionManager } from './manager/selection-instance-manager';
 export type { SelectionTypeConfig } from './types';
 export type { SearchMatchItem, SearchMatchFilter } from './helpers/text-highlight-manager';
 export * from './storage';
 export * from './core';
+export { createHighlighter, type HighlighterOptions } from './core/selection-highlighter';
 export { convertToSimple, convertSelectionsToSimple } from './utils';
 
 // 导出性能统计模块

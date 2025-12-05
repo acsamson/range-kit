@@ -9,14 +9,11 @@ import type {
   SelectionRestoreOptions,
 } from '../types';
 
-import { RestoreStatus } from '../types';
-
 import type { SelectionValidator } from '../core/selection-validator';
 import type { SelectionSerializerWrapper } from '../core/selection-serializer';
 import type { SelectionRestorer } from '../core/selection-restorer';
-import type { SelectionStorage } from '../core/selection-storage';
 import type { SelectionHighlighter } from '../core/selection-highlighter';
-import type { SelectionManager } from '../manager/selection-manager';
+import type { SelectionInstanceManager } from '../manager/selection-instance-manager';
 
 import {
   logInfo,
@@ -26,20 +23,29 @@ import {
 
 /**
  * 核心 API 依赖接口
+ * SDK 遵循无状态设计（stateless），不包含内置存储
  */
 export interface CoreAPIDependencies {
   validator: SelectionValidator;
   serializer: SelectionSerializerWrapper;
   restorer: SelectionRestorer;
-  storage: SelectionStorage;
   highlighter: SelectionHighlighter;
-  selectionManager: SelectionManager;
+  selectionManager: SelectionInstanceManager;
   options: Required<SelectionRestoreOptions>;
   getRegisteredType: (type: string) => any;
 }
 
 /**
- * 序列化当前选区并保存
+ * 序列化当前选区（纯函数，不自动存储）
+ *
+ * SDK 遵循无状态设计，serialize() 只负责将 Range 转换为 JSON
+ * 数据的持久化（存储到 LocalStorage/数据库）由应用层负责
+ *
+ * @example
+ * // 无状态工作流
+ * const json = await sdk.serialize();  // 只序列化，不存储
+ * await myStorage.save(json);          // 应用层决定如何存储
+ * await sdk.restore(json);             // 传入数据恢复
  */
 export async function serialize(
   deps: CoreAPIDependencies,
@@ -58,7 +64,8 @@ export async function serialize(
       return null;
     }
 
-    await deps.storage.save(serialized);
+    // 不再自动存储，由应用层决定
+    // 如果需要存储，应用层可以调用 storage API
 
     return serialized;
   } catch (error) {
@@ -68,32 +75,23 @@ export async function serialize(
 }
 
 /**
- * 恢复选区
+ * 恢复选区（纯函数，不涉及存储）
+ *
+ * SDK 遵循无状态设计，restore() 只负责将 JSON 恢复为 Range
+ * 数据需要由应用层直接传入，不再支持通过 ID 从内部存储获取
+ *
+ * @param data - 序列化的选区数据（必须是完整的 SerializedSelection 对象）
+ * @param clearPrevious - 是否清除之前的高亮
+ * @param autoScroll - 是否自动滚动到选区位置
  */
 export async function restore(
   deps: CoreAPIDependencies,
-  data: SerializedSelection | string,
+  data: SerializedSelection,
   clearPrevious: boolean = true,
   autoScroll: boolean = true,
 ): Promise<RestoreResult> {
   try {
-    let selectionData: SerializedSelection;
-
-    if (typeof data === 'string') {
-      const stored = await deps.storage.get(data);
-      if (!stored) {
-        return {
-          success: false,
-          layer: 0,
-          layerName: '数据不存在',
-          error: `找不到ID为 ${data} 的选区数据`,
-          restoreTime: 0,
-        };
-      }
-      selectionData = stored;
-    } else {
-      selectionData = data;
-    }
+    const selectionData = data;
 
     if (clearPrevious) {
       deps.highlighter.clearHighlight();
@@ -130,7 +128,7 @@ export async function restore(
       // 应用高亮并获取 highlightId
       const highlightId = deps.highlighter.highlightWithType(result.range, selectionType, autoScroll);
 
-      // 在SelectionManager中创建选区实例
+      // 在 SelectionInstanceManager 中创建选区实例（内存管理，非持久化存储）
       const instance = deps.selectionManager.addSelection(selectionData);
       (instance as { currentRange?: Range }).currentRange = result.range;
       deps.selectionManager.registerActiveRange(selectionData.id, result.range);
@@ -140,15 +138,8 @@ export async function restore(
         deps.selectionManager.selectionHighlights.set(selectionData.id, highlightId);
       }
 
-      // 更新运行时状态信息
-      const updatedSelection: SerializedSelection = {
-        ...selectionData,
-        runtime: {
-          restoreStatus: RestoreStatus.SUCCESS,
-          successLayer: result.layer,
-        },
-      };
-      await deps.storage.save(updatedSelection);
+      // 不再自动保存运行时状态到存储
+      // 如果需要记录恢复状态，应用层可以自行处理
     }
 
     return result;
@@ -169,7 +160,7 @@ export async function restore(
  */
 export async function restoreWithoutClear(
   deps: CoreAPIDependencies,
-  data: SerializedSelection | string,
+  data: SerializedSelection,
   autoScroll: boolean = true,
 ): Promise<RestoreResult> {
   return restore(deps, data, false, autoScroll);

@@ -7,7 +7,7 @@ import type { HighlightStyle, SelectionTypeConfig } from '../types';
 
 import type { SelectionValidator } from '../core/selection-validator';
 import type { SelectionHighlighter } from '../core/selection-highlighter';
-import type { SelectionManager } from '../manager/selection-manager';
+import type { SelectionInstanceManager } from '../manager/selection-instance-manager';
 import type { SerializedSelection } from '../types';
 
 /**
@@ -16,7 +16,7 @@ import type { SerializedSelection } from '../types';
 export interface SelectionAPIDependencies {
   validator: SelectionValidator;
   highlighter: SelectionHighlighter;
-  selectionManager: SelectionManager;
+  selectionManager: SelectionInstanceManager;
 }
 
 /**

@@ -4,8 +4,7 @@
  * 提供管理器模块间共享的类型接口
  */
 
-import { SelectionRestoreOptions, SelectionTypeConfig, HighlightStyle } from '../types';
-import { CSSBasedHighlighter } from '../highlighter/css-highlighter';
+import { SelectionRestoreOptions, SelectionTypeConfig, HighlightStyle, Highlighter } from '../types';
 
 /**
  * 性能优化：缓存的Range边界信息
@@ -52,8 +51,8 @@ export interface ActiveRangesChangeData {
  * 提供各模块间共享的状态和依赖
  */
 export interface SelectionManagerContext {
-  /** CSS高亮器实例 */
-  highlighter: CSSBasedHighlighter;
+  /** 高亮器实例（接口类型，支持依赖注入） */
+  highlighter: Highlighter;
   /** 配置选项 */
   options: Required<SelectionRestoreOptions>;
   /** 已注册的类型配置映射 */

@@ -7,10 +7,8 @@
 export * from './types';
 export { RangeSdkAppIdNameMap } from './constants';
 
-// 导出核心功能
+// 导出核心功能 - SelectionManager 是主入口
 export * from './selection-manager';
-export { RangeSDK } from './range-sdk';
-export type { RangeSDKOptions } from './range-sdk';
 
 // 导出 selection-restore 的类型和功能
 export {

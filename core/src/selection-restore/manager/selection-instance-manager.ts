@@ -1,8 +1,12 @@
 /**
- * 选区管理器
+ * 选区实例管理器 (SelectionInstanceManager)
  *
  * 负责管理所有活跃的选区实例
  * 组合各个子模块提供完整的选区管理功能
+ *
+ * 注意：此类与外层 SelectionManager 不同
+ * - SelectionInstanceManager: 管理 SelectionRestore 内部的选区实例
+ * - SelectionManager: SDK 的主入口，管理用户交互和事件
  */
 
 import {
@@ -12,9 +16,9 @@ import {
   SelectionRestoreOptions,
   SelectionTypeConfig,
   HighlightStyle,
+  Highlighter,
   DEFAULT_SELECTION_TYPE,
 } from '../types';
-import { CSSBasedHighlighter } from '../highlighter/css-highlighter';
 import { logInfo, logSuccess } from '../debug/logger';
 import { setCustomIdConfig } from '../serializer/serializer';
 
@@ -28,10 +32,10 @@ import { SelectionEventHandlers } from './event-handlers';
 import type { SelectionManagerContext, DetectedSelectionInfo } from './types';
 
 /**
- * 选区管理器
+ * 选区实例管理器
  * 负责管理所有活跃的选区实例，提供统一的选区操作接口
  */
-export class SelectionManager {
+export class SelectionInstanceManager {
   /** 选区实例映射 */
   private selections: Map<string, SelectionInstanceImpl> = new Map();
   /** 选区高亮ID映射 */
@@ -39,8 +43,8 @@ export class SelectionManager {
   /** 已注册的类型配置映射 */
   private registeredTypes: Map<string, SelectionTypeConfig> = new Map();
 
-  /** CSS高亮器实例 */
-  public highlighter: CSSBasedHighlighter;
+  /** 高亮器实例（接口类型，支持依赖注入） */
+  public highlighter: Highlighter;
   /** 配置选项 */
   private options: Required<SelectionRestoreOptions>;
 
@@ -56,7 +60,7 @@ export class SelectionManager {
   /** 事件处理器 */
   private eventHandlers!: SelectionEventHandlers;
 
-  constructor(highlighter: CSSBasedHighlighter, options: Required<SelectionRestoreOptions>) {
+  constructor(highlighter: Highlighter, options: Required<SelectionRestoreOptions>) {
     this.highlighter = highlighter;
     this.options = options;
 

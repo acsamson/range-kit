@@ -1,4 +1,11 @@
-import { Highlighter, HighlightStyle } from '../types';
+import {
+  Highlighter,
+  EventfulHighlighter,
+  HighlightStyle,
+  HighlightEventType,
+  HighlightEventData,
+  HighlightEventListener,
+} from '../types';
 import { logSuccess, logWarn, logDebug } from '../debug/logger';
 import { SCROLL_MARGIN } from '../constants';
 
@@ -7,14 +14,20 @@ export const isHighlightSupported = typeof Highlight !== 'undefined' && typeof C
 
 /**
  * 基于CSS Highlights API的高亮器（支持多选区同时高亮）
+ *
+ * 实现 EventfulHighlighter 接口，支持事件驱动的高亮操作
  */
-export class CSSBasedHighlighter implements Highlighter {
+export class CSSBasedHighlighter implements EventfulHighlighter {
   private styleElement: HTMLStyleElement | null = null;
   private activeHighlights: Map<string, Highlight> = new Map();
   private typeHighlights: Map<string, Highlight> = new Map(); // 按类型分组的高亮
   private highlightTypes: Map<string, string> = new Map(); // 记录每个高亮ID对应的类型
+  private highlightRanges: Map<string, Range> = new Map(); // 记录每个高亮ID对应的Range
   private highlightId: number = 0;
   private defaultStyle: HighlightStyle;
+
+  // 事件监听器映射
+  private eventListeners: Map<HighlightEventType, Set<HighlightEventListener>> = new Map();
 
   constructor() {
     this.defaultStyle = {
@@ -33,6 +46,57 @@ export class CSSBasedHighlighter implements Highlighter {
       logWarn('highlighter', 'CSS Highlights API 不支持，将使用降级方案');
     } else {
       logSuccess('highlighter', 'CSS Highlights API 支持检测成功');
+    }
+
+    // 初始化事件监听器映射
+    Object.values(HighlightEventType).forEach(eventType => {
+      this.eventListeners.set(eventType, new Set());
+    });
+  }
+
+  // ========== EventfulHighlighter 接口实现 ==========
+
+  /**
+   * 添加事件监听器
+   */
+  on(eventType: HighlightEventType, listener: HighlightEventListener): void {
+    const listeners = this.eventListeners.get(eventType);
+    if (listeners) {
+      listeners.add(listener);
+      logDebug('highlighter', `添加事件监听器: ${eventType}`);
+    }
+  }
+
+  /**
+   * 移除事件监听器
+   */
+  off(eventType: HighlightEventType, listener: HighlightEventListener): void {
+    const listeners = this.eventListeners.get(eventType);
+    if (listeners) {
+      listeners.delete(listener);
+      logDebug('highlighter', `移除事件监听器: ${eventType}`);
+    }
+  }
+
+  /**
+   * 触发事件
+   */
+  private emit(eventType: HighlightEventType, data: Omit<HighlightEventData, 'type' | 'timestamp'>): void {
+    const listeners = this.eventListeners.get(eventType);
+    if (listeners && listeners.size > 0) {
+      const eventData: HighlightEventData = {
+        type: eventType,
+        timestamp: Date.now(),
+        ...data,
+      };
+
+      listeners.forEach(listener => {
+        try {
+          listener(eventData);
+        } catch (error) {
+          logWarn('highlighter', `事件监听器执行出错: ${eventType}`, { error: (error as Error).message });
+        }
+      });
     }
   }
 
@@ -242,7 +306,18 @@ export class CSSBasedHighlighter implements Highlighter {
         }
 
         // 将当前Range添加到对应类型的高亮中
-        typeHighlight.add(range.cloneRange());
+        const clonedRange = range.cloneRange();
+        typeHighlight.add(clonedRange);
+
+        // 保存Range引用以便事件使用
+        this.highlightRanges.set(highlightId, clonedRange);
+
+        // 触发 ADDED 事件
+        this.emit(HighlightEventType.ADDED, {
+          highlightId,
+          highlightType: type,
+          range: clonedRange,
+        });
 
         // 🔍 调试信息：确认添加到CSS.highlights
         logSuccess('highlighter', '✅ 高亮已添加到CSS.highlights:', {
@@ -454,6 +529,10 @@ export class CSSBasedHighlighter implements Highlighter {
       this.activeHighlights.clear();
       this.typeHighlights.clear();
       this.highlightTypes.clear();
+      this.highlightRanges.clear();
+
+      // 触发 CLEARED 事件
+      this.emit(HighlightEventType.CLEARED, {});
 
       logSuccess('highlighter', '所有CSS高亮已清除');
     } else {
@@ -502,12 +581,23 @@ export class CSSBasedHighlighter implements Highlighter {
       },
     });
 
+    // 获取Range以便事件使用
+    const removedRange = this.highlightRanges.get(highlightId);
+
     // 先重建该类型的高亮，排除当前要删除的高亮
     this.rebuildTypeHighlights(highlightType, [highlightId]);
 
     // 然后从内部状态中移除
     this.activeHighlights.delete(highlightId);
     this.highlightTypes.delete(highlightId);
+    this.highlightRanges.delete(highlightId);
+
+    // 触发 REMOVED 事件
+    this.emit(HighlightEventType.REMOVED, {
+      highlightId,
+      highlightType,
+      range: removedRange,
+    });
 
     logSuccess('highlighter', `已清除高亮 ID: ${highlightId}`, {
       afterRemoval: {
@@ -612,6 +702,10 @@ export class CSSBasedHighlighter implements Highlighter {
   setDefaultStyle(style: HighlightStyle): void {
     this.defaultStyle = { ...this.defaultStyle, ...style };
     this.updateHighlightStyles(this.defaultStyle);
+
+    // 触发 STYLE_CHANGED 事件
+    this.emit(HighlightEventType.STYLE_CHANGED, {});
+
     logDebug('highlighter', '默认高亮样式已更新', style);
   }
 
@@ -634,6 +728,10 @@ export class CSSBasedHighlighter implements Highlighter {
    */
   destroy(): void {
     this.clearHighlight();
+
+    // 清理所有事件监听器
+    this.eventListeners.forEach(listeners => listeners.clear());
+    this.eventListeners.clear();
 
     if (this.styleElement && this.styleElement.parentNode) {
       this.styleElement.parentNode.removeChild(this.styleElement);

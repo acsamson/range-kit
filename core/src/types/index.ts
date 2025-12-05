@@ -5,6 +5,82 @@ export enum RangeSdkAppId {
   RANGE_SDK = 1000, // range-sdk 自己的页面
 }
 
+// ========== SDK 错误类型定义 ==========
+
+/**
+ * SDK 基础错误类
+ * 所有 SDK 错误都继承自此类
+ */
+export class RangeSDKError extends Error {
+  constructor(
+    message: string,
+    public readonly code: string,
+    public readonly details?: Record<string, unknown>
+  ) {
+    super(message);
+    this.name = 'RangeSDKError';
+  }
+}
+
+/**
+ * 选区无效错误
+ * 当选区不在有效容器范围内或选区为空时抛出
+ */
+export class SelectionInvalidError extends RangeSDKError {
+  constructor(message: string, details?: Record<string, unknown>) {
+    super(message, 'SELECTION_INVALID', details);
+    this.name = 'SelectionInvalidError';
+  }
+}
+
+/**
+ * 序列化错误
+ * 当选区无法被序列化时抛出
+ */
+export class SerializationError extends RangeSDKError {
+  constructor(message: string, details?: Record<string, unknown>) {
+    super(message, 'SERIALIZATION_FAILED', details);
+    this.name = 'SerializationError';
+  }
+}
+
+/**
+ * 恢复错误
+ * 当选区无法被恢复时抛出
+ */
+export class RestoreError extends RangeSDKError {
+  constructor(message: string, details?: Record<string, unknown>) {
+    super(message, 'RESTORE_FAILED', details);
+    this.name = 'RestoreError';
+  }
+}
+
+/**
+ * 容器未找到错误
+ * 当指定的容器元素不存在时抛出
+ */
+export class ContainerNotFoundError extends RangeSDKError {
+  constructor(containerId: string) {
+    super(
+      `找不到 ID 为 "${containerId}" 的容器元素`,
+      'CONTAINER_NOT_FOUND',
+      { containerId }
+    );
+    this.name = 'ContainerNotFoundError';
+  }
+}
+
+/**
+ * 配置错误
+ * 当 SDK 配置无效时抛出
+ */
+export class ConfigurationError extends RangeSDKError {
+  constructor(message: string, details?: Record<string, unknown>) {
+    super(message, 'CONFIGURATION_ERROR', details);
+    this.name = 'ConfigurationError';
+  }
+}
+
 // 导出重叠检测相关类型
 export { 
   OverlapType, 

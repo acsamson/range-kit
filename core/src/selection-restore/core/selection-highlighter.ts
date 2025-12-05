@@ -1,36 +1,84 @@
 import { CSSBasedHighlighter } from '../highlighter/css-highlighter';
-import { HighlightStyle } from '../types';
+import { Highlighter, HighlightStyle } from '../types';
 import { logSuccess, logDebug, logInfo } from '../debug/logger';
 
 /**
- * 选区高亮管理器 - 负责选区的高亮显示
+ * 默认高亮样式
  */
-export class SelectionHighlighter {
-  private highlighter: CSSBasedHighlighter;
+const DEFAULT_HIGHLIGHT_STYLE: HighlightStyle = {
+  backgroundColor: '#fff8e1',
+  border: 'none',
+  borderRadius: '2px',
+  padding: '1px 0',
+  boxShadow: 'none',
+  transition: 'all 0.2s ease',
+};
+
+/**
+ * 高亮器配置选项
+ */
+export interface HighlighterOptions {
+  /** 默认样式 */
+  defaultStyle?: HighlightStyle;
+  /** 自定义高亮器实例（用于依赖注入） */
+  highlighter?: Highlighter;
+}
+
+/**
+ * 创建高亮器实例的工厂函数
+ *
+ * 支持依赖注入，可传入自定义 Highlighter 实现
+ *
+ * @example
+ * ```typescript
+ * // 使用默认 CSSBasedHighlighter
+ * const highlighter = createHighlighter();
+ *
+ * // 使用自定义高亮器
+ * const customHighlighter = new MyCustomHighlighter();
+ * const highlighter = createHighlighter({ highlighter: customHighlighter });
+ * ```
+ */
+export function createHighlighter(options?: HighlighterOptions): Highlighter {
+  if (options?.highlighter) {
+    return options.highlighter;
+  }
+  return new CSSBasedHighlighter();
+}
+
+/**
+ * 选区高亮管理器 - 负责选区的高亮显示
+ *
+ * 这是一个适配器/包装器类，提供统一的高亮操作接口。
+ * 支持依赖注入，可以传入任意实现 Highlighter 接口的实例。
+ */
+export class SelectionHighlighter implements Highlighter {
+  private highlighter: Highlighter;
   private defaultStyle: HighlightStyle;
 
-  constructor(defaultStyle?: HighlightStyle) {
-    this.highlighter = new CSSBasedHighlighter();
-    this.defaultStyle = defaultStyle || {
-      backgroundColor: '#fff8e1',
-      border: 'none',
-      borderRadius: '2px',
-      padding: '1px 0',
-      boxShadow: 'none',
-      transition: 'all 0.2s ease',
-    };
+  /**
+   * 创建选区高亮管理器
+   *
+   * @param options - 配置选项，可传入默认样式或自定义高亮器
+   */
+  constructor(options?: HighlighterOptions | HighlightStyle) {
+    // 兼容旧版 API：直接传入 HighlightStyle
+    const opts: HighlighterOptions = options && 'highlighter' in options
+      ? options
+      : { defaultStyle: options as HighlightStyle | undefined };
+
+    this.highlighter = opts.highlighter ?? createHighlighter();
+    this.defaultStyle = opts.defaultStyle ?? DEFAULT_HIGHLIGHT_STYLE;
     this.highlighter.setDefaultStyle(this.defaultStyle);
   }
 
-  /**
-   * 高亮Range
-   */
-  highlight(range: Range, autoScroll: boolean = true): string {
-    const highlightId = this.highlighter.highlight(range);
+  // ========== Highlighter 接口实现 ==========
 
-    if (autoScroll && this.highlighter.scrollToRange) {
-      this.highlighter.scrollToRange(range);
-    }
+  /**
+   * 高亮 Range
+   */
+  highlight(range: Range, style?: HighlightStyle): string {
+    const highlightId = this.highlighter.highlight(range, style);
 
     logSuccess('highlighter', 'Range高亮成功', {
       highlightId,
@@ -41,7 +89,7 @@ export class SelectionHighlighter {
   }
 
   /**
-   * 使用类型高亮Range
+   * 使用类型高亮 Range
    */
   highlightWithType(range: Range, type: string, autoScroll: boolean = true): string {
     const highlightId = this.highlighter.highlightWithType(range, type, autoScroll);
@@ -56,19 +104,35 @@ export class SelectionHighlighter {
   }
 
   /**
-   * 注册类型样式
-   */
-  registerTypeStyle(type: string, style: HighlightStyle): void {
-    this.highlighter.registerTypeStyle(type, style);
-    logInfo('highlighter', `注册类型样式: ${type}`, style);
-  }
-
-  /**
    * 清除所有高亮
    */
   clearHighlight(): void {
     this.highlighter.clearHighlight();
     logDebug('highlighter', '所有高亮已清除');
+  }
+
+  /**
+   * 清除指定 ID 的高亮
+   */
+  clearHighlightById(highlightId: string): void {
+    this.highlighter.clearHighlightById(highlightId);
+    logDebug('highlighter', `高亮已清除: ${highlightId}`);
+  }
+
+  /**
+   * 清除指定类型的所有高亮
+   */
+  clearHighlightByType(type: string): void {
+    this.highlighter.clearHighlightByType(type);
+    logDebug('highlighter', `类型高亮已清除: ${type}`);
+  }
+
+  /**
+   * 注册类型样式
+   */
+  registerTypeStyle(type: string, style: HighlightStyle): void {
+    this.highlighter.registerTypeStyle(type, style);
+    logInfo('highlighter', `注册类型样式: ${type}`, style);
   }
 
   /**
@@ -81,9 +145,50 @@ export class SelectionHighlighter {
   }
 
   /**
-   * 获取高亮器实例
+   * 创建高亮样式字符串
    */
-  getHighlighter(): CSSBasedHighlighter {
+  createHighlightStyle(style: HighlightStyle): string {
+    return this.highlighter.createHighlightStyle(style);
+  }
+
+  /**
+   * 滚动到指定 Range 位置
+   */
+  scrollToRange(range: Range): void {
+    this.highlighter.scrollToRange(range);
+  }
+
+  /**
+   * 获取当前活跃高亮数量
+   */
+  getActiveHighlightCount(): number {
+    return this.highlighter.getActiveHighlightCount();
+  }
+
+  /**
+   * 检查是否有活跃高亮
+   */
+  hasActiveHighlights(): boolean {
+    return this.highlighter.hasActiveHighlights();
+  }
+
+  /**
+   * 销毁高亮器
+   */
+  destroy(): void {
+    this.highlighter.destroy();
+    logInfo('highlighter', '高亮器已销毁');
+  }
+
+  // ========== 扩展方法（非 Highlighter 接口） ==========
+
+  /**
+   * 获取底层高亮器实例
+   *
+   * 注意：此方法返回具体实现，可能破坏抽象。
+   * 建议仅在需要访问底层特性时使用。
+   */
+  getHighlighter(): Highlighter {
     return this.highlighter;
   }
 
@@ -118,13 +223,5 @@ export class SelectionHighlighter {
         transition: 'all 0.3s ease',
       },
     };
-  }
-
-  /**
-   * 销毁高亮器
-   */
-  destroy(): void {
-    this.highlighter.destroy();
-    logInfo('highlighter', '高亮器已销毁');
   }
 }

@@ -1,12 +1,14 @@
 /**
  * 主要API接口类型定义
+ *
+ * 无状态设计（Stateless）：
+ * - SDK 只负责 Range <-> JSON 的转换和 DOM 操作
+ * - 不包含内置存储功能，数据持久化由应用层负责
  */
 
 import type {
   SerializedSelection,
-  SerializedSelectionSimple,
   RestoreResult,
-  SelectionStats,
   DebugLogEntry,
 } from './core';
 import type {
@@ -16,30 +18,16 @@ import type {
 } from './options';
 import type { SelectionInteractionEvent } from './events';
 
-// 主要API接口
+// 主要API接口（无状态设计）
 export interface SelectionRestoreAPI {
-  /** 序列化当前选区 */
+  /** 序列化当前选区（不自动存储，由应用层决定存储方式） */
   serialize(id?: string): Promise<SerializedSelection | null>;
-  /** 恢复选区 */
-  restore(data: SerializedSelection | string, clearPrevious?: boolean, autoScroll?: boolean): Promise<RestoreResult>;
+  /** 恢复选区（必须传入完整的 SerializedSelection 对象） */
+  restore(data: SerializedSelection, clearPrevious?: boolean, autoScroll?: boolean): Promise<RestoreResult>;
   /** 恢复选区但不清除之前的高亮 */
-  restoreWithoutClear(data: SerializedSelection | string, autoScroll?: boolean): Promise<RestoreResult>;
-  /** 获取所有保存的选区 */
+  restoreWithoutClear(data: SerializedSelection, autoScroll?: boolean): Promise<RestoreResult>;
+  /** 获取当前内存中活跃的选区（非持久化存储） */
   getAllSelections(): Promise<SerializedSelection[]>;
-  /** 删除选区 */
-  deleteSelection(id: string): Promise<void>;
-  /** 更新选区数据 */
-  updateSelection(id: string, updates: Partial<SerializedSelection>): Promise<void>;
-  /** 导入选区数据到 storage */
-  importSelections(selections: SerializedSelection[]): Promise<{
-    success: number;
-    total: number;
-    errors: string[];
-  }>;
-  /** 清空所有选区 */
-  clearAllSelections(): Promise<void>;
-  /** 获取统计信息 */
-  getStats(): Promise<SelectionStats>;
   /** 设置高亮样式 */
   setHighlightStyle(style: HighlightStyle): void;
   /** 高亮当前选区 */
@@ -117,15 +105,13 @@ export interface SelectionRestoreAPI {
   /** 获取当前选区的Range对象 */
   getCurrentSelectionRange(): Range | null;
   /** 获取高亮器实例（用于多选区高亮） */
-  getHighlighter(): import('../highlighter/css-highlighter').CSSBasedHighlighter;
+  getHighlighter(): import('./interfaces').Highlighter;
   /** 检测指定坐标点的所有选区 */
   detectAllSelectionsAtPoint(x: number, y: number): Array<{
     selectionId: string;
     text: string;
     selectionData: SerializedSelection | null;
   }>;
-  /** 获取所有保存的选区（精简版本） */
-  getAllSelectionsSimple(): Promise<SerializedSelectionSimple[]>;
   /** 注册新的选区类型 */
   registerSelectionType(config: SelectionTypeConfig): void;
   /** 获取已注册的选区类型配置 */
@@ -144,10 +130,6 @@ export interface SelectionRestoreAPI {
   highlightAllSelectionsScrollToLast(): Promise<{ success: number; total: number; errors: string[] }>;
   /** 批量高亮所有选区（滚动到中间） */
   highlightAllSelectionsScrollToMiddle(): Promise<{ success: number; total: number; errors: string[] }>;
-  /** 导出所有选区数据为 JSON 字符串 */
-  exportData(): Promise<string>;
-  /** 从 JSON 字符串导入选区数据 */
-  importData(jsonData: string): Promise<number>;
   /** 设置配置选项 */
   setOptions(options: Partial<SelectionRestoreOptions>): void;
   /** 获取当前配置选项 */

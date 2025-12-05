@@ -10,6 +10,7 @@ import type {
   SelectionBehaviorCallback,
   ActiveRangesChangeCallback,
 } from './events';
+import type { Highlighter } from './interfaces';
 
 // 选区高亮样式配置
 export interface HighlightStyle {
@@ -130,6 +131,24 @@ export interface SelectionRestoreOptions {
   enableLogging?: boolean;
   /** 自定义选区样式 */
   highlightStyle?: HighlightStyle;
+  /**
+   * 自定义高亮器实例（依赖注入）
+   *
+   * 如果提供，将使用传入的高亮器实例替代默认的 CSSBasedHighlighter。
+   * 允许用户实现自定义的高亮渲染逻辑，如：
+   * - 基于 Canvas 的高亮
+   * - 基于 Web Components 的高亮
+   * - 自定义降级方案
+   *
+   * @example
+   * ```typescript
+   * const customHighlighter = new MyCustomHighlighter();
+   * const sdk = new SelectionRestore({
+   *   highlighter: customHighlighter,
+   * });
+   * ```
+   */
+  highlighter?: Highlighter;
   /** 存储配置 */
   storage?: StorageConfig | StorageFactoryConfig;
   /** 选区生效范围容器选择器数组 - 只有在这些容器内的选区才会被处理 */

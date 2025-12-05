@@ -11,7 +11,7 @@ import type {
 import type { SelectionValidator } from '../core/selection-validator';
 import type { SelectionRestorer } from '../core/selection-restorer';
 import type { SelectionHighlighter } from '../core/selection-highlighter';
-import type { SelectionManager } from '../manager/selection-manager';
+import type { SelectionInstanceManager } from '../manager/selection-instance-manager';
 
 import {
   logInfo,
@@ -33,7 +33,7 @@ export interface BatchAPIDependencies {
   validator: SelectionValidator;
   restorer: SelectionRestorer;
   highlighter: SelectionHighlighter;
-  selectionManager: SelectionManager;
+  selectionManager: SelectionInstanceManager;
   options: Required<SelectionRestoreOptions>;
   getRegisteredType: (type: string) => any;
   getAllSelections: () => Promise<SerializedSelection[]>;

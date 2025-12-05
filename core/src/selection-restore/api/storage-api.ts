@@ -10,7 +10,7 @@ import type {
 } from '../types';
 
 import type { SelectionStorage } from '../core/selection-storage';
-import type { SelectionManager } from '../manager/selection-manager';
+import type { SelectionInstanceManager } from '../manager/selection-instance-manager';
 
 import {
   logSuccess,
@@ -24,7 +24,7 @@ import { convertToSimple } from '../utils';
  */
 export interface StorageAPIDependencies {
   storage: SelectionStorage;
-  selectionManager: SelectionManager;
+  selectionManager: SelectionInstanceManager;
 }
 
 /**

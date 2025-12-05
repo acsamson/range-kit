@@ -51,18 +51,111 @@ export interface Storage {
   close?(): void;
 }
 
-// 高亮器接口
+/**
+ * 高亮器接口
+ *
+ * 定义了高亮器的核心契约，支持多种实现方式：
+ * - CSSBasedHighlighter: 基于 CSS Highlights API（推荐，不修改 DOM）
+ * - FallbackHighlighter: 降级方案，使用 <mark> 标签
+ *
+ * 使用示例：
+ * ```typescript
+ * const highlighter: Highlighter = createHighlighter();
+ * const id = highlighter.highlightWithType(range, 'comment', true);
+ * highlighter.clearHighlightById(id);
+ * ```
+ */
 export interface Highlighter {
-  /** 高亮选区，返回高亮ID */
+  // ========== 核心高亮方法 ==========
+
+  /** 使用默认样式高亮选区，返回高亮 ID */
   highlight(range: Range, style?: HighlightStyle): string;
-  /** 支持类型和滚动控制的高亮选区方法 */
-  highlightWithType?(range: Range, type: string, autoScroll?: boolean): string;
+
+  /** 使用指定类型高亮选区，返回高亮 ID */
+  highlightWithType(range: Range, type: string, autoScroll?: boolean): string;
+
+  // ========== 清除方法 ==========
+
   /** 清除所有高亮 */
   clearHighlight(): void;
-  /** 清除指定高亮 */
-  clearHighlightById?(highlightId: string): void;
-  /** 创建高亮样式 */
+
+  /** 清除指定 ID 的高亮 */
+  clearHighlightById(highlightId: string): void;
+
+  /** 清除指定类型的所有高亮 */
+  clearHighlightByType(type: string): void;
+
+  // ========== 样式管理 ==========
+
+  /** 注册类型对应的高亮样式 */
+  registerTypeStyle(type: string, style: HighlightStyle): void;
+
+  /** 设置默认高亮样式 */
+  setDefaultStyle(style: HighlightStyle): void;
+
+  /** 创建高亮样式字符串（用于 CSS 规则） */
   createHighlightStyle(style: HighlightStyle): string;
-  /** 滚动到指定范围位置 */
-  scrollToRange?(range: Range): void;
+
+  // ========== 导航和滚动 ==========
+
+  /** 滚动到指定 Range 位置 */
+  scrollToRange(range: Range): void;
+
+  // ========== 状态查询 ==========
+
+  /** 获取当前活跃高亮数量 */
+  getActiveHighlightCount(): number;
+
+  /** 检查是否有活跃高亮 */
+  hasActiveHighlights(): boolean;
+
+  // ========== 生命周期 ==========
+
+  /** 销毁高亮器，清理资源 */
+  destroy(): void;
+}
+
+/**
+ * 高亮事件类型
+ */
+export enum HighlightEventType {
+  /** 高亮被添加 */
+  ADDED = 'highlight:added',
+  /** 高亮被移除 */
+  REMOVED = 'highlight:removed',
+  /** 高亮样式变化 */
+  STYLE_CHANGED = 'highlight:style-changed',
+  /** 所有高亮被清除 */
+  CLEARED = 'highlight:cleared',
+}
+
+/**
+ * 高亮事件数据
+ */
+export interface HighlightEventData {
+  /** 事件类型 */
+  type: HighlightEventType;
+  /** 高亮 ID（如适用） */
+  highlightId?: string;
+  /** 高亮类型（如适用） */
+  highlightType?: string;
+  /** Range 对象（如适用） */
+  range?: Range;
+  /** 时间戳 */
+  timestamp: number;
+}
+
+/**
+ * 高亮事件监听器
+ */
+export type HighlightEventListener = (event: HighlightEventData) => void;
+
+/**
+ * 支持事件的高亮器接口（扩展基础接口）
+ */
+export interface EventfulHighlighter extends Highlighter {
+  /** 添加事件监听器 */
+  on(eventType: HighlightEventType, listener: HighlightEventListener): void;
+  /** 移除事件监听器 */
+  off(eventType: HighlightEventType, listener: HighlightEventListener): void;
 }

@@ -5,7 +5,7 @@
 
 import { SelectionText } from '../core/selection-text';
 import { SelectionHighlighter } from '../core/selection-highlighter';
-import { SelectionManager } from '../manager/selection-manager';
+import { SelectionInstanceManager } from '../manager/selection-instance-manager';
 import { logSuccess, logDebug } from '../debug/logger';
 import { setupHighlightInteractionHandlers, HighlightedRange, HighlightInteractionEvent } from './highlight-event-handler';
 import { detectRangeOverlap, OverlapType } from './overlap-detector';
@@ -60,7 +60,7 @@ export interface TextHighlightResult {
 export interface TextHighlightDependencies {
   textSearcher: SelectionText;
   highlighter: SelectionHighlighter;
-  selectionManager: SelectionManager;
+  selectionManager: SelectionInstanceManager;
 }
 
 /**

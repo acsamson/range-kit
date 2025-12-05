@@ -1,6 +1,9 @@
 /**
  * 选区管理器
  * 负责管理选区的创建、恢复、高亮和交互事件
+ *
+ * 严格模式 API：必须传入 containerId（字符串）
+ * 这为 DOM 树建立了一个绝对坐标原点，提升选区恢复的稳定性和性能
  */
 
 import {
@@ -18,7 +21,7 @@ import {
   SelectionBehaviorType
 } from './selection-restore';
 import { OverlapType } from './selection-restore/helpers/overlap-detector';
-import { MarkType } from './types';
+import { MarkType, ContainerNotFoundError, RestoreError, SerializationError } from './types';
 import type { RangeData, RangeSDKEvents, MarkData } from './types';
 
 // 导入子模块
@@ -35,28 +38,52 @@ interface ExtendedSelectionInteractionEvent extends BaseSelectionInteractionEven
 
 type SelectionInteractionEvent = ExtendedSelectionInteractionEvent;
 
+
 export class SelectionManager {
   private listeners: Map<keyof RangeSDKEvents, Function[]> = new Map();
   private isSelecting = false;
   private currentRange: Range | null = null;
   private selectionRestore: SelectionRestore;
   private activeSelections: Map<string, RangeData> = new Map();
+  private container: HTMLElement;
+  private containerId: string;
   private boundHandlers: {
     selectionChange: () => void;
     mouseUp: () => void;
     mouseDown: () => void;
   };
 
-  constructor(
-    private container: Element = document.body
-  ) {
+  /**
+   * 创建选区管理器
+   *
+   * @param containerId - 容器元素的 ID（必须存在于 DOM 中）
+   * @throws {SelectionManagerInitError} 如果找不到指定 ID 的元素
+   *
+   * @example
+   * ```typescript
+   * // 正确用法：传入元素 ID
+   * const manager = new SelectionManager('article-content');
+   *
+   * // 错误用法：传入 Element 对象（不再支持）
+   * // const manager = new SelectionManager(document.body); // 会报类型错误
+   * ```
+   */
+  constructor(containerId: string) {
+    const el = document.getElementById(containerId);
+    if (!el) {
+      throw new ContainerNotFoundError(containerId);
+    }
+
+    this.container = el;
+    this.containerId = containerId;
+
     const options: SelectionRestoreOptions = {
       maxRetries: 3,
       fuzzyMatchThreshold: 0.8,
       contextLength: 50,
       enableLogging: process.env.NODE_ENV === 'development',
-      enabledContainers: [this.getContainerSelector()],
-      rootNodeId: this.container.id || undefined,
+      enabledContainers: [`#${containerId}`],
+      rootNodeId: containerId,
       defaultSelectionType: 'comment',
       enableSelectionMonitoring: true,
       monitoringInterval: 1000,
@@ -79,19 +106,11 @@ export class SelectionManager {
     this.init();
   }
 
+  /**
+   * 获取容器选择器
+   */
   private getContainerSelector(): string {
-    if (this.container.id) {
-      return `#${this.container.id}`;
-    }
-
-    if (this.container.className) {
-      const classes = this.container.className.split(' ').filter(Boolean);
-      if (classes.length > 0) {
-        return `.${classes.join('.')}`;
-      }
-    }
-
-    return this.container.tagName.toLowerCase();
+    return `#${this.containerId}`;
   }
 
   private init() {
@@ -165,24 +184,18 @@ export class SelectionManager {
   }
 
   private isRangeInContainer(range: Range): boolean {
-    try {
-      return this.container.contains(range.commonAncestorContainer);
-    } catch {
-      return false;
-    }
+    return this.container.contains(range.commonAncestorContainer);
   }
 
   private isValidRange(range: Range): boolean {
-    try {
-      const currentSelection = this.selectionRestore.getCurrentSelection();
-      const hasText = currentSelection.text.trim().length > 0;
-      const hasValidContainers = range.startContainer !== null && range.endContainer !== null;
-      const isNotCollapsed = !range.collapsed;
+    if (!range) return false;
 
-      return range && hasText && hasValidContainers && isNotCollapsed;
-    } catch (error) {
-      return false;
-    }
+    const currentSelection = this.selectionRestore.getCurrentSelection();
+    const hasText = currentSelection.text.trim().length > 0;
+    const hasValidContainers = range.startContainer !== null && range.endContainer !== null;
+    const isNotCollapsed = !range.collapsed;
+
+    return hasText && hasValidContainers && isNotCollapsed;
   }
 
   getCurrentRange(): Range | null {
@@ -194,72 +207,61 @@ export class SelectionManager {
       return null;
     }
 
-    try {
-      const selectionData = await this.selectionRestore.serialize();
-      return selectionData ? convertSelectionToRange(selectionData) : null;
-    } catch (error) {
-      console.error('获取当前选区数据时出错:', error);
-      return null;
-    }
+    const selectionData = await this.selectionRestore.serialize();
+    return selectionData ? convertSelectionToRange(selectionData) : null;
   }
 
-  async restoreSelection(rangeData: RangeData): Promise<Range | null> {
-    try {
-      const selectionData = convertRangeToSelection(rangeData);
-      const result = await this.selectionRestore.restore(selectionData);
+  async restoreSelection(rangeData: RangeData): Promise<Range> {
+    const selectionData = convertRangeToSelection(rangeData);
+    const result = await this.selectionRestore.restore(selectionData);
 
-      if (result.success && result.range) {
-        this.currentRange = result.range;
-
-        const currentSelection = this.selectionRestore.getCurrentSelection();
-        if (currentSelection.selection) {
-          currentSelection.selection.removeAllRanges();
-          currentSelection.selection.addRange(result.range);
-        }
-
-        return result.range;
-      }
-
-      console.warn('选区恢复失败:', result.error);
-      return null;
-    } catch (error) {
-      console.error('恢复选区时出错:', error);
-      return null;
+    if (!result.success || !result.range) {
+      throw new RestoreError(
+        `选区恢复失败: ${result.error || '未知错误'}`,
+        { rangeData, layer: result.layer, layerName: result.layerName }
+      );
     }
+
+    this.currentRange = result.range;
+
+    const currentSelection = this.selectionRestore.getCurrentSelection();
+    if (currentSelection.selection) {
+      currentSelection.selection.removeAllRanges();
+      currentSelection.selection.addRange(result.range);
+    }
+
+    return result.range;
   }
 
-  async highlightRange(rangeData: RangeData, duration: number = 0): Promise<string | null> {
-    try {
-      const selectionData = convertRangeToSelection(rangeData);
-      const result = await this.selectionRestore.restore(selectionData);
+  async highlightRange(rangeData: RangeData, duration: number = 0): Promise<string> {
+    const selectionData = convertRangeToSelection(rangeData);
+    const result = await this.selectionRestore.restore(selectionData);
 
-      if (result.success && result.range) {
-        const highlighter = this.selectionRestore.getHighlighter();
-
-        highlighter.registerTypeStyle('comment', {
-          backgroundColor: 'rgba(255, 193, 7, 0.3)',
-          borderBottom: '2px solid #ffc107',
-          cursor: 'pointer',
-          transition: 'all 0.2s ease'
-        });
-
-        const highlightId = highlighter.highlightWithType(result.range, 'comment', true);
-
-        if (duration > 0) {
-          setTimeout(() => {
-            highlighter.clearHighlight();
-          }, duration);
-        }
-
-        return highlightId;
-      }
-
-      console.warn('高亮选区失败:', result.error);
-      return null;
-    } catch (error) {
-      console.error('高亮选区时出错:', error);
-      return null;
+    if (!result.success || !result.range) {
+      throw new RestoreError(
+        `高亮选区失败: ${result.error || '未知错误'}`,
+        { rangeData, layer: result.layer, layerName: result.layerName }
+      );
     }
+
+    const highlighter = this.selectionRestore.getHighlighter();
+
+    highlighter.registerTypeStyle('comment', {
+      backgroundColor: 'rgba(255, 193, 7, 0.3)',
+      borderBottom: '2px solid #ffc107',
+      cursor: 'pointer',
+      transition: 'all 0.2s ease'
+    });
+
+    const highlightId = highlighter.highlightWithType(result.range, 'comment', true);
+
+    if (duration > 0) {
+      setTimeout(() => {
+        highlighter.clearHighlight();
+      }, duration);
+    }
+
+    return highlightId;
   }
 
   async highlightTextInContainers(
@@ -278,87 +280,53 @@ export class SelectionManager {
     highlightIds: string[];
     errors: string[];
   }> {
-    try {
-      const targetContainers = containers.length > 0 ? containers : [this.getContainerSelector()];
+    const targetContainers = containers.length > 0 ? containers : [this.getContainerSelector()];
 
-      const combinedInteractionHandler = options.onInteraction
-        ? (event: SelectionInteractionEvent, instance: SelectionInstance) => {
-            this.handleSelectionInteraction(event, instance);
-            options.onInteraction!(event, instance);
-          }
-        : (event: SelectionInteractionEvent, instance: SelectionInstance) => {
-            this.handleSelectionInteraction(event, instance);
-          };
-
-      const result = await this.selectionRestore.highlightTextInContainers(
-        text,
-        type,
-        targetContainers,
-        {
-          caseSensitive: options.caseSensitive ?? false,
-          wholeWord: options.wholeWord ?? false,
-          maxMatches: options.maxMatches ?? 10000,
-          onInteraction: combinedInteractionHandler
+    const combinedInteractionHandler = options.onInteraction
+      ? (event: SelectionInteractionEvent, instance: SelectionInstance) => {
+          this.handleSelectionInteraction(event, instance);
+          options.onInteraction!(event, instance);
         }
-      );
+      : (event: SelectionInteractionEvent, instance: SelectionInstance) => {
+          this.handleSelectionInteraction(event, instance);
+        };
 
-      console.log(`文本高亮完成: ${result.success}/${result.total} 个匹配项成功高亮`);
-      return result;
-    } catch (error) {
-      console.error('文本高亮时出错:', error);
-      return {
-        success: 0,
-        total: Array.isArray(text) ? text.length : 1,
-        highlightIds: [],
-        errors: [String(error)]
-      };
-    }
+    return await this.selectionRestore.highlightTextInContainers(
+      text,
+      type,
+      targetContainers,
+      {
+        caseSensitive: options.caseSensitive ?? false,
+        wholeWord: options.wholeWord ?? false,
+        maxMatches: options.maxMatches ?? 10000,
+        onInteraction: combinedInteractionHandler
+      }
+    );
   }
 
   clearTextHighlights(text?: string, containers: string[] = []): void {
-    try {
-      const targetContainers = containers.length > 0 ? containers : [this.getContainerSelector()];
-      this.selectionRestore.clearTextHighlights(text, targetContainers);
-    } catch (error) {
-      console.error('清除文本高亮时出错:', error);
-    }
+    const targetContainers = containers.length > 0 ? containers : [this.getContainerSelector()];
+    this.selectionRestore.clearTextHighlights(text, targetContainers);
   }
 
   async highlightMultipleRanges(rangeDataList: RangeData[]): Promise<{ success: number; total: number; errors: string[] }> {
-    try {
-      const selectionDataList = rangeDataList.map(rangeData => convertRangeToSelection(rangeData));
-      return await this.selectionRestore.highlightSelections(selectionDataList);
-    } catch (error) {
-      console.error('批量高亮选区时出错:', error);
-      return { success: 0, total: rangeDataList.length, errors: [String(error)] };
-    }
+    const selectionDataList = rangeDataList.map(rangeData => convertRangeToSelection(rangeData));
+    return await this.selectionRestore.highlightSelections(selectionDataList);
   }
 
   clearAllHighlights(): void {
-    try {
-      const highlighter = this.selectionRestore.getHighlighter();
-      highlighter.clearHighlight();
-    } catch (error) {
-      console.error('清除高亮时出错:', error);
-    }
+    const highlighter = this.selectionRestore.getHighlighter();
+    highlighter.clearHighlight();
   }
 
-  async highlightCurrentSelection(duration: number = 3000): Promise<void> {
-    try {
-      this.selectionRestore.highlightSelection(duration);
-    } catch (error) {
-      console.error('高亮当前选区时出错:', error);
-    }
+  highlightCurrentSelection(duration: number = 3000): void {
+    this.selectionRestore.highlightSelection(duration);
   }
 
-  clearSelection() {
-    try {
-      const currentSelection = this.selectionRestore.getCurrentSelection();
-      if (currentSelection.selection) {
-        currentSelection.selection.removeAllRanges();
-      }
-    } catch (error) {
-      console.warn('清除选区时出错:', error);
+  clearSelection(): void {
+    const currentSelection = this.selectionRestore.getCurrentSelection();
+    if (currentSelection.selection) {
+      currentSelection.selection.removeAllRanges();
     }
     this.currentRange = null;
   }
@@ -395,18 +363,8 @@ export class SelectionManager {
   }
 
   private async handleSelectionInteraction(event: SelectionInteractionEvent, instance: SelectionInstance): Promise<void> {
-    let overlappedRanges: OverlappedRange[] = [];
-    try {
-      const selectionData = instance.data || event.selection;
-      if (selectionData) {
-        const restoreResult = await this.selectionRestore.restoreRangeOnly(selectionData);
-        if (restoreResult.success && restoreResult.range) {
-          overlappedRanges = await detectOverlappedRanges(restoreResult.range, this.selectionRestore);
-        }
-      }
-    } catch (error) {
-      console.warn('检测重叠选区失败:', error);
-    }
+    // 尝试检测重叠选区，失败不影响后续交互流程
+    const overlappedRanges = await this.tryDetectOverlappedRanges(instance.data || event.selection);
 
     const behaviorEvent: SelectionBehaviorEvent = {
       type: SelectionBehaviorType.SELECTED,
@@ -458,8 +416,28 @@ export class SelectionManager {
     }
   }
 
+  /**
+   * 检测与当前 Range 重叠的选区
+   */
   public async detectOverlappedRanges(currentRange: Range): Promise<OverlappedRange[]> {
     return detectOverlappedRanges(currentRange, this.selectionRestore);
+  }
+
+  /**
+   * 尝试检测重叠选区，失败时返回空数组（用于事件处理器等不应中断的场景）
+   */
+  private async tryDetectOverlappedRanges(selectionData: SerializedSelection | null): Promise<OverlappedRange[]> {
+    if (!selectionData) return [];
+
+    try {
+      const restoreResult = await this.selectionRestore.restoreRangeOnly(selectionData);
+      if (restoreResult.success && restoreResult.range) {
+        return await detectOverlappedRanges(restoreResult.range, this.selectionRestore);
+      }
+    } catch {
+      // 重叠检测是增强功能，失败不影响核心流程
+    }
+    return [];
   }
 
   private handleSelectionComplete(event: SelectionCompleteEvent, instance: SelectionInstance): void {

@@ -77,7 +77,13 @@ export type {
   Restorer,
   Storage,
   Highlighter,
+  EventfulHighlighter,
+  HighlightEventData,
+  HighlightEventListener,
 } from './interfaces';
+
+// 高亮事件枚举
+export { HighlightEventType } from './interfaces';
 
 // API 接口类型
 export type { SelectionRestoreAPI } from './api';
