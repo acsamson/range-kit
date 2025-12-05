@@ -52,16 +52,16 @@ export function restoreSelection(data: SerializedSelection, containerConfig?: Co
   // L1: ID锚点恢复（最精确）
   try {
     logDebug('restorer', '📍 尝试L1: ID锚点恢复');
-    if (restoreByIdAnchors(data, containerConfig)) {
+    const l1Result = restoreByIdAnchors(data, containerConfig);
+    if (l1Result.success) {
       const restoreTime = performance.now() - startTime;
-      const range = (window as any).__lastRestoredRange;
       logDebug('restorer', '✅ L1恢复成功');
       return {
         success: true,
         layer: 1,
         layerName: 'ID锚点恢复',
         restoreTime,
-        range: range ? range.cloneRange() : undefined,
+        range: l1Result.range,
       };
     }
   } catch (error) {
@@ -71,16 +71,16 @@ export function restoreSelection(data: SerializedSelection, containerConfig?: Co
   // L2: DOM路径恢复（结构稳定）
   try {
     logDebug('restorer', '🛣️ 尝试L2: DOM路径恢复');
-    if (restoreByOriginalPaths(data, containerConfig)) {
+    const l2Result = restoreByOriginalPaths(data, containerConfig);
+    if (l2Result.success) {
       const restoreTime = performance.now() - startTime;
-      const range = (window as any).__lastRestoredRange;
       logDebug('restorer', '✅ L2恢复成功');
       return {
         success: true,
         layer: 2,
         layerName: 'DOM路径恢复',
         restoreTime,
-        range: range ? range.cloneRange() : undefined,
+        range: l2Result.range,
       };
     }
   } catch (error) {
@@ -90,16 +90,16 @@ export function restoreSelection(data: SerializedSelection, containerConfig?: Co
   // L3: 多锚点恢复（跨元素专业）
   try {
     logDebug('restorer', '⚓ 尝试L3: 多锚点恢复');
-    if (restoreByMultipleAnchors(data, containerConfig)) {
+    const l3Result = restoreByMultipleAnchors(data, containerConfig);
+    if (l3Result.success) {
       const restoreTime = performance.now() - startTime;
-      const range = (window as any).__lastRestoredRange;
       logDebug('restorer', '✅ L3恢复成功');
       return {
         success: true,
         layer: 3,
         layerName: '多锚点恢复',
         restoreTime,
-        range: range ? range.cloneRange() : undefined,
+        range: l3Result.range,
       };
     }
   } catch (error) {
@@ -109,16 +109,16 @@ export function restoreSelection(data: SerializedSelection, containerConfig?: Co
   // L4: 结构指纹恢复（智能匹配）
   try {
     logDebug('restorer', '🔍 尝试L4: 结构指纹恢复');
-    if (restoreByStructuralFingerprint(data, containerConfig)) {
+    const l4Result = restoreByStructuralFingerprint(data, containerConfig);
+    if (l4Result.success) {
       const restoreTime = performance.now() - startTime;
-      const range = (window as any).__lastRestoredRange;
       logDebug('restorer', '✅ L4恢复成功');
       return {
         success: true,
         layer: 4,
         layerName: '结构指纹恢复',
         restoreTime,
-        range: range ? range.cloneRange() : undefined,
+        range: l4Result.range,
       };
     }
   } catch (error) {

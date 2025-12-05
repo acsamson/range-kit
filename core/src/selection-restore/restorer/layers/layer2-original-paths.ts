@@ -4,11 +4,11 @@
  * ===================================================================
  */
 
-import { SerializedSelection, ContainerConfig } from '../../types';
+import { SerializedSelection, ContainerConfig, LayerRestoreResult } from '../../types';
 import { applySelectionWithStrictValidation, intelligentTextMatch } from '../utils';
 import { logDebug, logWarn, logError } from '../../debug/logger';
 
-export function restoreByOriginalPaths(data: SerializedSelection, containerConfig?: ContainerConfig): boolean {
+export function restoreByOriginalPaths(data: SerializedSelection, containerConfig?: ContainerConfig): LayerRestoreResult {
   const { paths, text } = data;
 
   // 记录容器配置状态
@@ -34,7 +34,7 @@ export function restoreByOriginalPaths(data: SerializedSelection, containerConfi
       textLength: text.length,
       textContent: text,
     });
-    return false;
+    return { success: false };
   }
 
   if (!paths.startPath || !paths.endPath) {
@@ -42,7 +42,7 @@ export function restoreByOriginalPaths(data: SerializedSelection, containerConfi
       startPath: paths.startPath,
       endPath: paths.endPath,
     });
-    return false;
+    return { success: false };
   }
 
   // 根节点限定: 如果指定了rootNodeId，只在该节点内查找
@@ -76,7 +76,7 @@ export function restoreByOriginalPaths(data: SerializedSelection, containerConfi
         startElementFound: !!startElement,
         endElementFound: !!endElement,
       });
-      return false;
+      return { success: false };
     }
 
     // 检查是否是跨元素选择
@@ -97,9 +97,10 @@ export function restoreByOriginalPaths(data: SerializedSelection, containerConfi
       range.setEnd(endPos.node, endPos.offset);
 
       // 先验证原始偏移量是否能恢复正确的文本
-      if (applySelectionWithStrictValidation(range, text, 'L2')) {
+      const result = applySelectionWithStrictValidation(range, text, 'L2');
+      if (result.success) {
         logDebug('L2', '✅ 原始偏移量恢复成功');
-        return true;
+        return result;
       }
 
       logDebug('L2', '⚠️ 原始偏移量恢复失败，尝试智能文本匹配降级策略');
@@ -111,7 +112,7 @@ export function restoreByOriginalPaths(data: SerializedSelection, containerConfi
     return attemptSingleElementTextMatching(startElement, text);
   } catch (error) {
     logError('L2', '原始路径恢复异常', error);
-    return false;
+    return { success: false };
   }
 }
 
@@ -143,7 +144,7 @@ function restoreCrossElementSelection(
   endElement: Element,
   _paths: any,
   expectedText: string,
-): boolean {
+): LayerRestoreResult {
   logDebug('L2', '开始跨元素选择恢复', {
     startElement: startElement.tagName,
     endElement: endElement.tagName,
@@ -157,14 +158,14 @@ function restoreCrossElementSelection(
     return attemptCrossElementTextMatching(startElement, endElement, expectedText);
   } catch (error) {
     logError('L2', '跨元素选择恢复异常', error);
-    return false;
+    return { success: false };
   }
 }
 
 /**
  * 单元素文本智能匹配
  */
-function attemptSingleElementTextMatching(element: Element, expectedText: string): boolean {
+function attemptSingleElementTextMatching(element: Element, expectedText: string): LayerRestoreResult {
   logDebug('L2', '🔍 单元素智能文本匹配开始', {
     element: element.tagName,
     expectedTextPreview: expectedText.substring(0, 50) + (expectedText.length > 50 ? '...' : ''),
@@ -189,7 +190,7 @@ function attemptSingleElementTextMatching(element: Element, expectedText: string
         elementTextPreview: elementText.substring(0, 100) + '...',
         expectedTextPreview: expectedText.substring(0, 50) + '...',
       });
-      return false;
+      return { success: false };
     }
 
     logDebug('L2', '✅ 找到目标文本位置', { textIndex });
@@ -226,7 +227,7 @@ function attemptSingleElementTextMatching(element: Element, expectedText: string
 
     if (!startNode || !endNode) {
       logWarn('L2', '单元素文本匹配：无法定位起始或结束节点');
-      return false;
+      return { success: false };
     }
 
     // 创建Range并验证
@@ -244,7 +245,7 @@ function attemptSingleElementTextMatching(element: Element, expectedText: string
     return applySelectionWithStrictValidation(range, expectedText, 'L2');
   } catch (error) {
     logError('L2', '单元素文本匹配异常', error);
-    return false;
+    return { success: false };
   }
 }
 
@@ -255,7 +256,7 @@ function attemptCrossElementTextMatching(
   startElement: Element,
   endElement: Element,
   expectedText: string,
-): boolean {
+): LayerRestoreResult {
   logDebug('L2', '尝试跨元素文本智能匹配');
 
   try {
@@ -263,7 +264,7 @@ function attemptCrossElementTextMatching(
     const commonParent = findCommonParent(startElement, endElement);
     if (!commonParent) {
       logWarn('L2', '无法找到共同父元素');
-      return false;
+      return { success: false };
     }
 
     // 在共同父元素中查找目标文本
@@ -285,7 +286,7 @@ function attemptCrossElementTextMatching(
         parentTextPreview: parentText.substring(0, 100) + '...',
         expectedTextPreview: expectedText.substring(0, 50) + '...',
       });
-      return false;
+      return { success: false };
     }
 
     logDebug('L2', '找到目标文本位置', { textIndex });
@@ -322,7 +323,7 @@ function attemptCrossElementTextMatching(
 
     if (!startNode || !endNode) {
       logWarn('L2', '跨元素文本匹配：无法定位起始或结束节点');
-      return false;
+      return { success: false };
     }
 
     // 创建Range并验证
@@ -333,7 +334,7 @@ function attemptCrossElementTextMatching(
     return applySelectionWithStrictValidation(range, expectedText, 'L2');
   } catch (error) {
     logError('L2', '跨元素文本匹配异常', error);
-    return false;
+    return { success: false };
   }
 }
 

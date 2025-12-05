@@ -4,11 +4,11 @@
  * ===================================================================
  */
 
-import { SerializedSelection, ContainerConfig } from '../../types';
+import { SerializedSelection, ContainerConfig, LayerRestoreResult } from '../../types';
 import { applySelectionWithStrictValidation, intelligentTextMatch } from '../utils';
 import { logDebug, logWarn, logError, logSuccess } from '../../debug/logger';
 
-export function restoreByMultipleAnchors(data: SerializedSelection, containerConfig?: ContainerConfig): boolean {
+export function restoreByMultipleAnchors(data: SerializedSelection, containerConfig?: ContainerConfig): LayerRestoreResult {
   const { multipleAnchors, text } = data;
 
   if (!multipleAnchors.startAnchors || !multipleAnchors.endAnchors) {
@@ -16,7 +16,7 @@ export function restoreByMultipleAnchors(data: SerializedSelection, containerCon
       startAnchors: !!multipleAnchors.startAnchors,
       endAnchors: !!multipleAnchors.endAnchors,
     });
-    return false;
+    return { success: false };
   }
 
   try {
@@ -50,7 +50,7 @@ export function restoreByMultipleAnchors(data: SerializedSelection, containerCon
         endAnchor: multipleAnchors.endAnchors,
         containerFiltered: containerConfig ? true : false,
       });
-      return false;
+      return { success: false };
     }
 
     logDebug('L3', `L3候选元素：找到${startCandidatesWithText.length}个匹配元素`);
@@ -65,15 +65,18 @@ export function restoreByMultipleAnchors(data: SerializedSelection, containerCon
         const endElement = endCandidate.element;
 
         // 尝试在这对元素中恢复选区
-        const result = tryRestoreInElementPair(startElement, endElement, text);
-        if (result) {
+        const rangeResult = tryRestoreInElementPair(startElement, endElement, text);
+        if (rangeResult) {
           logSuccess('L3', 'L3找到文本位置', {
             startElement: startElement.tagName,
             endElement: endElement.tagName,
             textLength: text.length,
           });
 
-          return applySelectionWithStrictValidation(result, text, 'L3');
+          const validationResult = applySelectionWithStrictValidation(rangeResult, text, 'L3');
+          if (validationResult.success) {
+            return validationResult;
+          }
         }
       }
     }
@@ -83,13 +86,13 @@ export function restoreByMultipleAnchors(data: SerializedSelection, containerCon
       测试的组合数: Math.min(startCandidatesWithText.length, 10) * endCandidatesWithText.length,
     });
 
-    return false;
+    return { success: false };
 
   } catch (error) {
     logError('L3', 'L3处理异常', {
       error: (error as Error).message,
     });
-    return false;
+    return { success: false };
   }
 }
 

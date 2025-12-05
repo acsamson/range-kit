@@ -4,11 +4,11 @@
  * ===================================================================`
  */
 
-import { SerializedSelection, ContainerConfig } from '../../types';
+import { SerializedSelection, ContainerConfig, LayerRestoreResult } from '../../types';
 import { applySelectionWithStrictValidation } from '../utils';
 import { logDebug, logWarn, logError, logSuccess } from '../../debug/logger';
 
-export function restoreByIdAnchors(data: SerializedSelection, containerConfig?: ContainerConfig): boolean {
+export function restoreByIdAnchors(data: SerializedSelection, containerConfig?: ContainerConfig): LayerRestoreResult {
   const { anchors, text } = data;
 
   // 记录容器配置状态
@@ -109,7 +109,7 @@ export function restoreByIdAnchors(data: SerializedSelection, containerConfig?: 
       missingStartElement: !startElement,
       missingEndElement: !endElement,
     });
-    return false;
+    return { success: false };
   }
 
   try {
@@ -175,8 +175,9 @@ export function restoreByIdAnchors(data: SerializedSelection, containerConfig?: 
         range.setEnd(endPos.node, endPos.offset);
 
         // 🔥 使用严格文本验证
-        if (applySelectionWithStrictValidation(range, text, 'L1-同元素')) {
-          return true;
+        const result = applySelectionWithStrictValidation(range, text, 'L1-同元素');
+        if (result.success) {
+          return result;
         }
       } else {
         logWarn('L1', 'L1同元素文本节点查找失败', {
@@ -381,8 +382,9 @@ export function restoreByIdAnchors(data: SerializedSelection, containerConfig?: 
           }
 
           // 严格文本
-          if (applySelectionWithStrictValidation(range, text, 'L1-跨元素')) {
-            return true;
+          const crossResult = applySelectionWithStrictValidation(range, text, 'L1-跨元素');
+          if (crossResult.success) {
+            return crossResult;
           }
         }
       } catch (rangeError: any) {
@@ -399,5 +401,5 @@ export function restoreByIdAnchors(data: SerializedSelection, containerConfig?: 
     });
   }
 
-  return false;
+  return { success: false };
 }

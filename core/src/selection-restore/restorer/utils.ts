@@ -1,4 +1,4 @@
-import { SimilarityCandidate, StructuralFingerprint, TextSimilarityCalculator, StructuralSimilarityCalculator } from '../types';
+import { SimilarityCandidate, StructuralFingerprint, TextSimilarityCalculator, StructuralSimilarityCalculator, LayerRestoreResult } from '../types';
 import { logDebug, logWarn, logError, logSuccess } from '../debug/logger';
 
 /**
@@ -421,8 +421,9 @@ export function validateTextMatch(range: Range, expectedText: string, layerName:
 /**
  * 严格文本验证函数（选区评论专用）
  * 只接受100%精确匹配，不允许任何宽松处理
+ * @returns LayerRestoreResult - 包含成功状态和 Range 对象
  */
-export function applySelectionWithStrictValidation(range: Range, expectedText: string, layerName: string): boolean {
+export function applySelectionWithStrictValidation(range: Range, expectedText: string, layerName: string): LayerRestoreResult {
   try {
     // 严格验证：Range文本必须100%匹配期望文本
     const rangeText = range.toString();
@@ -450,27 +451,26 @@ export function applySelectionWithStrictValidation(range: Range, expectedText: s
         }
       }
 
-      return false;
+      return { success: false };
     }
 
-    // 验证成功后，保存Range对象到全局变量，供上层获取
-    (window as any).__lastRestoredRange = range.cloneRange();
-
     logSuccess('restorer', `${layerName}严格验证成功 - 文本100%匹配`);
-    return true;
+    // 直接返回 Range 对象，不再使用全局变量
+    return { success: true, range: range.cloneRange() };
   } catch (error) {
     logError('restorer', `${layerName}严格验证出错`, {
       error: (error as Error).message,
     });
-    return false;
+    return { success: false };
   }
 }
 
 /**
  * 通用选区应用函数（保持向后兼容）
  * 改为只验证Range，不再应用Selection API，支持CSS Highlights API
+ * @returns LayerRestoreResult - 包含成功状态和 Range 对象
  */
-export function applySelectionWithValidation(range: Range, expectedText: string, layerName: string): boolean {
+export function applySelectionWithValidation(range: Range, expectedText: string, layerName: string): LayerRestoreResult {
   try {
     // 直接验证Range的文本内容，不使用Selection API
     const rangeText = range.toString();
@@ -487,7 +487,7 @@ export function applySelectionWithValidation(range: Range, expectedText: string,
       if (Math.abs(rangeText.length - expectedText.length) <= 4 && rangeText.includes(expectedText.replace(/\n+/g, ''))) {
         logDebug('restorer', '检测到浏览器Range调整，Range验证通过');
         logSuccess('restorer', `${layerName}Range验证成功（经调整）`);
-        return true;
+        return { success: true, range: range.cloneRange() };
       }
 
       // 计算差异位置用于调试
@@ -506,19 +506,17 @@ export function applySelectionWithValidation(range: Range, expectedText: string,
         }
       }
 
-      return false;
+      return { success: false };
     }
 
-    // 验证成功后，保存Range对象到全局变量，供上层获取
-    (window as any).__lastRestoredRange = range.cloneRange();
-
     logSuccess('restorer', `${layerName}Range验证成功`);
-    return true;
+    // 直接返回 Range 对象，不再使用全局变量
+    return { success: true, range: range.cloneRange() };
   } catch (error) {
     logError('restorer', `${layerName}Range验证出错`, {
       error: (error as Error).message,
     });
-    return false;
+    return { success: false };
   }
 }
 

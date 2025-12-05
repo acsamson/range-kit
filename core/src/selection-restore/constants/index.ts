@@ -1,4 +1,4 @@
-import { DEFAULT_SELECTION_TYPE, SelectionContextChangeStrategy } from '../types';
+import { DEFAULT_SELECTION_TYPE } from '../types';
 
 // ========== 性能相关常量 ==========
 
@@ -114,9 +114,4 @@ export const DEFAULT_OPTIONS = {
   ],
   enableSelectionMonitoring: false,
   monitoringInterval: 1000,
-  enableContextChangeMonitoring: false,
-  contextChangeStrategy: 'notify-only' as SelectionContextChangeStrategy,
-  contextChangeDetectionInterval: 500,
-  enableDOMChangeMonitoring: false,
-  domChangeTargetContainers: [],
 };
