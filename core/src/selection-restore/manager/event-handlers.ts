@@ -121,13 +121,6 @@ export class SelectionEventHandlers {
         mouseEvent.clientY
       );
 
-      console.log('[SelectionEventHandlers] click detected', {
-        x: mouseEvent.clientX,
-        y: mouseEvent.clientY,
-        selectionId,
-        hasCallback: !!this.config.options.onSelectionInteraction
-      });
-
       if (selectionId && this.config.options.onSelectionInteraction) {
         const instance = this.config.getSelectionInstance(selectionId);
         const range = this.config.rangeManager.getActiveRange(selectionId);

@@ -41,8 +41,19 @@ const createProductionLogger = () => ({
   clear: () => {},
   setEnabled: () => {},
   setMaxLogs: () => {},
+  setMinLevel: () => {},
+  getMinLevel: () => LogLevel.ERROR,
   exportLogs: () => '[]',
 });
+
+/** 日志级别优先级 */
+const LOG_LEVEL_PRIORITY: Record<LogLevel, number> = {
+  [LogLevel.DEBUG]: 0,
+  [LogLevel.INFO]: 1,
+  [LogLevel.SUCCESS]: 1,
+  [LogLevel.WARN]: 2,
+  [LogLevel.ERROR]: 3,
+};
 
 /**
  * 调试日志管理器单例
@@ -50,14 +61,20 @@ const createProductionLogger = () => ({
 class DebugLogger {
   private logs: DebugLogEntry[] = [];
   private subscribers: Set<LogSubscriber> = new Set();
-  private maxLogs: number = 1000; // 最大保存日志数量
+  private maxLogs: number = 1000;
   private enabled: boolean = true;
+  private minLevel: LogLevel = LogLevel.DEBUG;
 
   /**
    * 记录调试信息
    */
   log(level: LogLevel, category: string, message: string, data?: any, duration?: number): void {
     if (!this.enabled) return;
+
+    // 检查日志级别是否满足最小级别要求
+    if (LOG_LEVEL_PRIORITY[level] < LOG_LEVEL_PRIORITY[this.minLevel]) {
+      return;
+    }
 
     const entry: DebugLogEntry = {
       id: this.generateId(),
@@ -147,6 +164,21 @@ class DebugLogger {
     if (this.logs.length > maxLogs) {
       this.logs = this.logs.slice(-maxLogs);
     }
+  }
+
+  /**
+   * 设置最小日志级别
+   * @param level - 只输出此级别及以上的日志
+   */
+  setMinLevel(level: LogLevel): void {
+    this.minLevel = level;
+  }
+
+  /**
+   * 获取当前最小日志级别
+   */
+  getMinLevel(): LogLevel {
+    return this.minLevel;
   }
 
   /**

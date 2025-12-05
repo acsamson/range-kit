@@ -96,17 +96,10 @@ export class InteractionDetector {
   detectSelectionAtPoint(x: number, y: number): string | null {
     // 检测节流
     const now = Date.now();
-    // Remove throttle for click detection if needed, but keep it for hover
-    // However, for debugging click, this throttle might block click if hover happened just before?
-    // Hover throttle is 50ms. Click usually happens after hover.
-    // But let's log it.
-
-    // if (now - this.lastDetectionTime < PERFORMANCE_CONFIG.DETECTION_THROTTLE) {
-    //   return this.currentHoveredSelection;
-    // }
+    if (now - this.lastDetectionTime < PERFORMANCE_CONFIG.DETECTION_THROTTLE) {
+      return this.currentHoveredSelection;
+    }
     this.lastDetectionTime = now;
-
-    // console.log('[InteractionDetector] detectSelectionAtPoint', { x, y, activeRangesCount: this.activeRanges.size });
 
     if (this.activeRanges.size === 0) {
       return null;
@@ -134,13 +127,11 @@ export class InteractionDetector {
       const cachedInfo = this.cacheManager.getCachedRangeInfo(selectionId, range);
 
       if (this.isPointInRange(x, y, cachedInfo)) {
-        console.log('[InteractionDetector] Found selection via range check:', selectionId);
         this.currentHoveredSelection = selectionId;
         return selectionId;
       }
     }
 
-    console.log('[InteractionDetector] No selection found at point');
     this.currentHoveredSelection = null;
     return null;
   }
@@ -153,8 +144,6 @@ export class InteractionDetector {
    */
   detectAllSelectionsAtPoint(x: number, y: number): DetectedSelectionInfo[] {
     const results: DetectedSelectionInfo[] = [];
-
-    console.log('[InteractionDetector] detectAllSelectionsAtPoint', { x, y, activeRangesCount: this.activeRanges.size });
 
     if (this.activeRanges.size === 0) {
       return results;
@@ -176,7 +165,6 @@ export class InteractionDetector {
       }
     }
 
-    console.log('[InteractionDetector] Found selections:', results);
     return results;
   }
 

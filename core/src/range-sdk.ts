@@ -1,6 +1,5 @@
 import { SelectionManager } from './selection-manager'
 import type { RangeData, RangeSDKEvents } from './types'
-import { PerformanceMonitor, PerformanceMonitorConfig, IPerformanceMonitor } from './performance-monitor'
 
 // RangeSDK 配置选项
 export interface RangeSDKOptions {
@@ -8,8 +7,6 @@ export interface RangeSDKOptions {
   container?: Element
   // 是否启用调试模式
   debug?: boolean
-  // 性能监控配置
-  performance?: PerformanceMonitorConfig | boolean
 }
 
 /**
@@ -18,33 +15,15 @@ export interface RangeSDKOptions {
  */
 export class RangeSDK {
   private selectionManager: SelectionManager
-  private performanceMonitor?: IPerformanceMonitor
   private options: RangeSDKOptions
   private eventListeners: Map<keyof RangeSDKEvents, Set<Function>> = new Map()
 
   constructor(options: RangeSDKOptions = {}) {
     this.options = options;
 
-    // 初始化性能监控器
-    if (options.performance !== false) {
-      const performanceConfig = typeof options.performance === 'boolean'
-        ? {}
-        : options.performance || {}
-
-      this.performanceMonitor = new PerformanceMonitor({
-        ...performanceConfig,
-        warningCallback: (warning) => {
-          if (this.options.debug) {
-            console.warn('[RangeSDK Performance Warning]', warning)
-          }
-        }
-      })
-    }
-
     // 初始化选区管理器
     this.selectionManager = new SelectionManager(
-      options.container || document.body,
-      this.performanceMonitor
+      options.container || document.body
     )
 
     // 设置事件转发
@@ -137,33 +116,6 @@ export class RangeSDK {
   }
 
   /**
-   * 获取性能监控器
-   */
-  getPerformanceMonitor(): IPerformanceMonitor | undefined {
-    return this.performanceMonitor
-  }
-
-  /**
-   * 获取性能报告
-   */
-  getPerformanceReport(startTime?: number, endTime?: number): any {
-    if (!this.performanceMonitor) {
-      console.warn('[RangeSDK] Performance monitoring is not enabled')
-      return null
-    }
-    return this.performanceMonitor.getReport(startTime, endTime)
-  }
-
-  /**
-   * 清除性能指标
-   */
-  clearPerformanceMetrics(): void {
-    if (this.performanceMonitor) {
-      this.performanceMonitor.clearMetrics()
-    }
-  }
-
-  /**
    * 销毁 SDK
    */
   destroy(): void {
@@ -171,19 +123,8 @@ export class RangeSDK {
       console.log('[RangeSDK] Destroying SDK instance')
     }
 
-    // 输出最终性能报告
-    if (this.performanceMonitor && this.options.debug) {
-      const report = this.performanceMonitor.getReport()
-      console.log('[RangeSDK] Final Performance Report:', report)
-    }
-
     // 销毁选区管理器
     this.selectionManager.destroy()
-
-    // 销毁性能监控器
-    if (this.performanceMonitor && 'destroy' in this.performanceMonitor) {
-      (this.performanceMonitor as PerformanceMonitor).destroy()
-    }
 
     // 清理事件监听器
     this.eventListeners.clear()

@@ -46,7 +46,7 @@ export interface UseHighlightNavigationOptions {
    * 获取 SDK 实例的函数
    * 导航功能会从 SDK 读取所有活跃的高亮 Range
    */
-  getSDKInstance: () => SelectionRestore | null | undefined
+  getSDKInstance: () => SelectionRestore
 
   /**
    * 当前高亮项的样式配置

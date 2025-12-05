@@ -8,3 +8,4 @@ export * from './config-manager';
 export * from './text-highlight-manager';
 export * from './monitoring-manager';
 export * from './overlap-detector';
+export * from './selection-behavior-monitor';

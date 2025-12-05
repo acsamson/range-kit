@@ -11,7 +11,6 @@ export { RangeSdkAppIdNameMap } from './constants';
 export * from './selection-manager';
 export { RangeSDK } from './range-sdk';
 export type { RangeSDKOptions } from './range-sdk';
-export * from './performance-monitor';
 
 // 导出 selection-restore 的类型和功能
 export {

@@ -1,5 +1,6 @@
 import { Highlighter, HighlightStyle } from '../types';
 import { logSuccess, logWarn, logDebug } from '../debug/logger';
+import { SCROLL_MARGIN } from '../constants';
 
 // 检查浏览器是否支持CSS Highlights API
 export const isHighlightSupported = typeof Highlight !== 'undefined' && typeof CSS?.highlights !== 'undefined';
@@ -32,8 +33,6 @@ export class CSSBasedHighlighter implements Highlighter {
       logWarn('highlighter', 'CSS Highlights API 不支持，将使用降级方案');
     } else {
       logSuccess('highlighter', 'CSS Highlights API 支持检测成功');
-      // 注释掉自动测试高亮，避免页面刷新时自动选区
-      // setTimeout(() => this.createTestHighlight(), 1000);
     }
   }
 
@@ -344,12 +343,11 @@ export class CSSBasedHighlighter implements Highlighter {
         });
 
         // 检查是否需要进一步调整位置
-        const margin = 100;
         const needsCentering = (
-          rect.top < margin ||
-          rect.bottom > window.innerHeight - margin ||
-          rect.left < margin ||
-          rect.right > window.innerWidth - margin
+          rect.top < SCROLL_MARGIN ||
+          rect.bottom > window.innerHeight - SCROLL_MARGIN ||
+          rect.left < SCROLL_MARGIN ||
+          rect.right > window.innerWidth - SCROLL_MARGIN
         );
 
         if (needsCentering) {

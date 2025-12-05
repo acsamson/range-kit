@@ -135,7 +135,6 @@ export function useSelectionCallbacks(options: UseSelectionCallbacksOptions) {
    * 处理所有选区相关事件：created/cleared/click/hover/dblclick/contextmenu
    */
   const onSelectionAction = (event: SelectionActionEvent): void => {
-    console.log('[useSelectionCallbacks] onSelectionAction triggered:', event.type, event);
     switch (event.type) {
       case 'created':
         handleCreatedAction(event)
@@ -272,12 +271,10 @@ export function useSelectionCallbacks(options: UseSelectionCallbacksOptions) {
    * 检测所有重叠的已保存选区和搜索高亮，使用统一气泡显示
    */
   const handleClickAction = (event: SelectionActionEvent): void => {
-    console.log('[useSelectionCallbacks] handleClickAction start', event);
     // 计算点击位置
     const mouseEvent = event.originalEvent as MouseEvent
     const clickX = mouseEvent?.clientX || 0
     const clickY = mouseEvent?.clientY || 0
-    console.log('[useSelectionCallbacks] Click position:', { clickX, clickY });
 
     // 构建统一的选区项列表
     const items: SelectionItem[] = []
@@ -288,14 +285,10 @@ export function useSelectionCallbacks(options: UseSelectionCallbacksOptions) {
 
     if (sdkInstance) {
       overlappedSelections = sdkInstance.detectAllSelectionsAtPoint(clickX, clickY)
-      console.log('[useSelectionCallbacks] SDK detectAllSelectionsAtPoint result:', overlappedSelections);
-    } else {
-      console.warn('[useSelectionCallbacks] SDK instance not found');
     }
 
     // 如果 SDK 没有返回结果，降级使用当前点击的选区
     if (overlappedSelections.length === 0 && event.savedSelectionId) {
-      console.log('[useSelectionCallbacks] Fallback to event.savedSelectionId:', event.savedSelectionId);
       overlappedSelections = [{
         selectionId: event.savedSelectionId,
         text: event.text,
@@ -324,17 +317,11 @@ export function useSelectionCallbacks(options: UseSelectionCallbacksOptions) {
 
     // 2. 检测搜索高亮，并过滤掉已保存的
     const searchItems = detectSearchHighlightsAtPoint(clickX, clickY)
-    console.log('[useSelectionCallbacks] detectSearchHighlightsAtPoint result:', searchItems);
     const filteredSearchItems = filterDuplicateSearchItems(searchItems, savedItems)
     items.push(...filteredSearchItems)
 
-    console.log('[useSelectionCallbacks] Final items to show:', items);
-
     // 如果没有检测到任何选区项，不显示气泡
-    if (items.length === 0) {
-      console.log('[useSelectionCallbacks] No items found, not showing popover');
-      return
-    }
+    if (items.length === 0) return
 
     // 计算气泡位置 - 使用鼠标点击位置
     const clickPosition: PopoverData['position'] = {

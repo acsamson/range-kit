@@ -1,11 +1,8 @@
 import type { RangeSDK } from './core/range-sdk-with-plugins'
-import type { IPerformanceMonitor } from './core/performance-monitor'
 
 export declare global {
   interface Window {
-    __rangesdk__?: RangeSDK & {
-      performance?: IPerformanceMonitor;
-    } & Record<string, any>;
+    __rangesdk__?: RangeSDK & Record<string, any>;
   }
 
   // CSS Highlight API type definitions

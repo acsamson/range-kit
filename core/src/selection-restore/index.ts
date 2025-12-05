@@ -37,6 +37,7 @@ import {
   ConfigManager,
   TextHighlightManager,
   MonitoringManager,
+  SelectionBehaviorMonitor,
   highlightSelections,
   highlightAllSelections,
   highlightAllSelectionsWithoutScroll,
@@ -72,9 +73,7 @@ export class SelectionRestore implements SelectionRestoreAPI {
   private configManager: ConfigManager;
   private textHighlightManager: TextHighlightManager;
   private monitoringManager: MonitoringManager;
-
-  // 选区行为监听器相关
-  private selectionBehaviorListeners: Array<() => void> = [];
+  private selectionBehaviorMonitor: SelectionBehaviorMonitor;
 
   constructor(options: SelectionRestoreOptions = {}) {
     this.options = {
@@ -143,200 +142,19 @@ export class SelectionRestore implements SelectionRestoreAPI {
       context: this.context,
     });
 
-    // 初始化选区行为监听器
-    this.initializeSelectionBehaviorListeners();
+    // 初始化选区行为监控器
+    this.selectionBehaviorMonitor = new SelectionBehaviorMonitor({
+      enabledContainers: this.options.enabledContainers,
+      onSelectionBehavior: this.options.onSelectionBehavior,
+      getAllSelections: () => this.getAllSelections(),
+      restoreRangeOnly: (data) => this.restoreRangeOnly(data),
+      getActiveRange: (id) => this.selectionManager.getActiveRange(id),
+      getAllActiveSelectionIds: () => this.selectionManager.getAllActiveSelectionIds(),
+      getManagerSelections: () => this.selectionManager.getAllSelections(),
+    });
+    this.selectionBehaviorMonitor.initialize();
 
     logInfo('api', 'Selection Restore API 已初始化（拆分重构版）', this.options);
-  }
-
-  /**
-   * 获取选区位置信息
-   */
-  private getSelectionPosition(selection: Selection): { x: number; y: number; width: number; height: number } | undefined {
-    if (!selection.rangeCount) return undefined
-
-    try {
-      const range = selection.getRangeAt(0)
-      const rect = range.getBoundingClientRect()
-      return {
-        x: rect.x,
-        y: rect.y,
-        width: rect.width,
-        height: rect.height
-      }
-    } catch {
-      return undefined
-    }
-  }
-
-  /**
-   * 初始化选区行为监听器
-   */
-  private initializeSelectionBehaviorListeners(): void {
-    if (!this.options.onSelectionBehavior) return
-
-    // 清理之前的监听器
-    this.cleanupSelectionBehaviorListeners()
-
-    // 为每个容器添加监听器
-    const containers = this.options.enabledContainers?.length
-      ? this.options.enabledContainers.map(selector => document.querySelector(selector)).filter(Boolean) as Element[]
-      : [document.body]
-
-    containers.forEach(container => {
-      let isSelecting = false
-      let selectionStartTime = 0
-
-      // 鼠标按下事件 - 开始选择
-      const handleMouseDown = (event: Event) => {
-        isSelecting = true
-        selectionStartTime = Date.now()
-      }
-
-      // 鼠标释放事件 - 选择完成，这是唯一触发回调的时机
-      const handleMouseUp = async () => {
-        if (!isSelecting) return
-        isSelecting = false
-
-        // 短暂延迟确保选区已稳定
-        setTimeout(async () => {
-          const selection = window.getSelection()
-          const text = selection?.toString().trim() || ''
-
-          if (selection && !selection.isCollapsed && text) {
-            // 检查选区是否在当前容器内
-            if (selection.rangeCount > 0) {
-              const range = selection.getRangeAt(0)
-              if (container.contains(range.commonAncestorContainer)) {
-                const position = this.getSelectionPosition(selection)
-                
-                // 检测重叠选区
-                let overlappedRanges: any[] = []
-                let debugData: any = {}
-                
-                try {
-                  const result = await detectOverlappingSelections(
-                    range,
-                    text,
-                    async () => {
-                      // 优先从SelectionManager获取活跃选区（内存操作，极快）
-                      const activeSelections = await this.selectionManager.getAllSelections();
-                      if (activeSelections.length > 0) {
-                        return activeSelections;
-                      }
-                      // 如果没有活跃选区，才回退到存储查询（IO操作，较慢）
-                      return this.getAllSelections();
-                    },
-                    async (data) => {
-                      // 优先从SelectionManager获取现成的Range对象（O(1)）
-                      const activeRange = this.selectionManager.getActiveRange(data.id);
-                      if (activeRange) {
-                        return {
-                          success: true,
-                          range: activeRange,
-                          layer: 0,
-                          layerName: 'Active(Memory)',
-                          restoreTime: 0
-                        };
-                      }
-                      // 回退到重新恢复（DOM搜索，较慢）
-                      return this.restoreRangeOnly(data);
-                    }
-                  )
-
-                  overlappedRanges = result.overlappedRanges
-                  debugData = result.debugData
-
-                  // 额外检测 activeRanges 中没有对应 SerializedSelection 的 Range（如搜索高亮）
-                  const activeSelectionIds = new Set((await this.selectionManager.getAllSelections()).map(s => s.id));
-                  const allActiveIds = this.selectionManager.getAllActiveSelectionIds();
-
-                  for (const activeId of allActiveIds) {
-                    // 跳过已有 SerializedSelection 的（已在上面检测过）
-                    if (activeSelectionIds.has(activeId)) continue;
-
-                    const activeRange = this.selectionManager.getActiveRange(activeId);
-                    if (!activeRange) continue;
-
-                    try {
-                      // 使用核心重叠检测函数
-                      const overlapResult = detectRangeOverlap(range, activeRange);
-                      if (overlapResult.hasOverlap) {
-                        overlappedRanges.push({
-                          selectionId: activeId,
-                          text: activeRange.toString(),
-                          overlapType: overlapResult.overlapType,
-                          range: activeRange,
-                          overlappedText: activeRange.toString(),
-                          // 搜索高亮没有完整的 selectionData，创建一个简化版本
-                          selectionData: {
-                            id: activeId,
-                            text: activeRange.toString(),
-                            type: 'search', // 标记为搜索类型
-                          } as SerializedSelection
-                        });
-                      }
-                    } catch (e) {
-                      // 静默处理
-                    }
-                  }
-
-                  // 只在有重叠时输出调试数据
-                  if (overlappedRanges.length > 0) {
-                    console.log('🔍 OVERLAP_DETECTION_DEBUG:', debugData)
-                  }
-                } catch (error) {
-                  console.warn('检测重叠选区失败:', error)
-                }
-                
-                const behaviorEvent: SelectionBehaviorEvent = {
-                  type: SelectionBehaviorType.CREATED,
-                  selection,
-                  range,
-                  text,
-                  position,
-                  container,
-                  timestamp: Date.now(),
-                  overlappedRanges
-                }
-                this.options.onSelectionBehavior?.(behaviorEvent)
-              }
-            }
-          } else if (selection && selection.isCollapsed) {
-            // 选区被清除
-            const behaviorEvent: SelectionBehaviorEvent = {
-              type: SelectionBehaviorType.CLEARED,
-              selection,
-              range: null,
-              text: '',
-              container,
-              timestamp: Date.now()
-            }
-            this.options.onSelectionBehavior?.(behaviorEvent)
-          }
-        }, 10)
-      }
-
-      // 添加事件监听器
-      container.addEventListener('mousedown', handleMouseDown)
-      container.addEventListener('mouseup', handleMouseUp)
-
-      // 保存清理函数
-      const cleanup = () => {
-        container.removeEventListener('mousedown', handleMouseDown)
-        container.removeEventListener('mouseup', handleMouseUp)
-      }
-
-      this.selectionBehaviorListeners.push(cleanup)
-    })
-  }
-
-  /**
-   * 清理选区行为监听器
-   */
-  private cleanupSelectionBehaviorListeners(): void {
-    this.selectionBehaviorListeners.forEach(cleanup => cleanup())
-    this.selectionBehaviorListeners = []
   }
 
   /**
@@ -355,33 +173,6 @@ export class SelectionRestore implements SelectionRestoreAPI {
       if (!serialized) {
         return null;
       }
-
-      // 🚀 性能优化：完全禁用重复检查，避免 storage.getAll() 导致的性能问题
-      // 在有大量选区时（如49+个），遍历所有选区可能导致性能问题
-      // 允许少量重复选区是可接受的性能代价
-      // if (serialized.contentHash) {
-      //   const MAX_DUPLICATE_CHECK_COUNT = 20;
-      //   const existingSelections = await this.storage.getAll();
-      //   
-      //   // 只检查最近的选区，而不是全部
-      //   const recentSelections = existingSelections.length > MAX_DUPLICATE_CHECK_COUNT
-      //     ? existingSelections.slice(-MAX_DUPLICATE_CHECK_COUNT)
-      //     : existingSelections;
-      //     
-      //   const duplicate = recentSelections.find(
-      //     existing =>
-      //       existing.contentHash === serialized.contentHash &&
-      //       existing.appUrl === serialized.appUrl,
-      //   );
-      //
-      //   if (duplicate) {
-      //     logWarn(
-      //       'serializer',
-      //       `检测到重复选区，跳过保存: ${serialized.text.substring(0, 30)}...`,
-      //     );
-      //     return null;
-      //   }
-      // }
 
       await this.storage.save(serialized);
 
@@ -1067,8 +858,8 @@ export class SelectionRestore implements SelectionRestoreAPI {
    * 销毁实例
    */
   destroy(): void {
-    // 清理选区行为监听器
-    this.cleanupSelectionBehaviorListeners();
+    // 清理选区行为监控器
+    this.selectionBehaviorMonitor.destroy();
 
     this.monitoringManager.destroy();
     this.textHighlightManager.destroy();

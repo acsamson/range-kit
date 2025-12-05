@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue'
-import { useSelectionRestore, useSearchHighlight } from '@life2code/range-kit-vue'
+import { useSelectionRestore, useSearchHighlight, useHighlightNavigation } from '@life2code/range-kit-vue'
 import SelectionPopover from './components/SelectionPopover.vue'
 import ControlPanel from './components/ControlPanel.vue'
 import SearchHighlight from './components/SearchHighlight.vue'
@@ -55,8 +55,7 @@ const {
   deleteSelection,
   clearAllSelectionsData,
   getTypeConfig,
-  isInitialized,
-  navigation
+  isInitialized
 } = useSelectionRestore({
   appId: 'vue-demo-app',
   containers: ['.demo-content'],
@@ -88,8 +87,14 @@ const {
 refs.searchResults = searchResults
 
 // 3. Highlight Navigation
-// Removed useHighlightNavigation as we use the one from useSelectionRestore
-
+const { 
+  currentIndex, 
+  total, 
+  goToNext, 
+  goToPrev 
+} = useHighlightNavigation({
+  getSDKInstance
+})
 
 // Selection Actions
 const selectionActions = useSelectionActions({
@@ -208,9 +213,9 @@ onUnmounted(() => {
 
             <div class="nav-section">
                <div class="nav-controls">
-                 <button class="btn btn-outline" @click="navigation.goToPrev" :disabled="navigation.total.value === 0">Prev</button>
-                 <span class="nav-info">{{ navigation.currentIndex.value + 1 }} / {{ navigation.total.value }}</span>
-                 <button class="btn btn-outline" @click="navigation.goToNext" :disabled="navigation.total.value === 0">Next</button>
+                 <button class="btn btn-outline" @click="goToPrev" :disabled="total === 0">Prev</button>
+                 <span class="nav-info">{{ currentIndex + 1 }} / {{ total }}</span>
+                 <button class="btn btn-outline" @click="goToNext" :disabled="total === 0">Next</button>
                </div>
             </div>
           </div>

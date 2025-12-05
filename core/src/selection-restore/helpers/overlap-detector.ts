@@ -1,4 +1,5 @@
 import type { SerializedSelection, RestoreResult } from '../types';
+import { MAX_SELECTIONS_TO_CHECK } from '../constants';
 
 /**
  * 重叠类型枚举
@@ -389,9 +390,8 @@ export async function detectOverlappingSelections(
   
   try {
     const allSelections = await getAllSelections();
-    
-    // 只检查最近的10个选区，而不是全部
-    const MAX_SELECTIONS_TO_CHECK = 10;
+
+    // 只检查最近的选区，而不是全部
     const selectionsToCheck = allSelections.length > MAX_SELECTIONS_TO_CHECK
       ? allSelections.slice(-MAX_SELECTIONS_TO_CHECK)
       : allSelections;

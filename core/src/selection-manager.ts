@@ -26,14 +26,12 @@ interface ExtendedSelectionInteractionEvent extends BaseSelectionInteractionEven
 type SelectionInteractionEvent = ExtendedSelectionInteractionEvent;
 import { MarkType } from './types';
 import type { RangeData, RangeSDKEvents, AnchorCandidate, SerializableRect, MarkData } from './types';
-import { IPerformanceMonitor, MetricType } from './performance-monitor';
 
 export class SelectionManager {
   private listeners: Map<keyof RangeSDKEvents, Function[]> = new Map();
   private isSelecting = false;
   private currentRange: Range | null = null;
   private selectionRestore: SelectionRestore;
-  private performanceMonitor?: IPerformanceMonitor;
   private activeSelections: Map<string, RangeData> = new Map(); // 追踪活跃的选区
   // 保存绑定后的事件处理函数引用，用于正确移除事件监听器
   private boundHandlers: {
@@ -43,10 +41,8 @@ export class SelectionManager {
   };
   
   constructor(
-    private container: Element = document.body,
-    performanceMonitor?: IPerformanceMonitor
+    private container: Element = document.body
   ) {
-    this.performanceMonitor = performanceMonitor;
     // 初始化新的选区恢复管理器
     const options: SelectionRestoreOptions = {
       maxRetries: 3,
@@ -172,35 +168,19 @@ export class SelectionManager {
       return;
     }
     console.log('[SelectionManager] 选区在容器内');
-    
-    // 开始性能监控
-    const metricId = this.performanceMonitor?.startMetric(
-      MetricType.SELECTION_CREATE,
-      'processSelection',
-      { textLength: currentSelection.text.length }
-    );
-    
+
     try {
       // 使用新的选区恢复包序列化选区数据
       const selectionData = await this.selectionRestore.serialize();
-      
+
       if (selectionData) {
         // 将 SerializedSelection 转换为 RangeData 格式
         const rangeData = this.convertSelectionToRange(selectionData);
-        
+
         // 触发选区选择事件
         this.emit('range-selected', rangeData);
       }
-      
-      // 结束性能监控
-      if (metricId) {
-        this.performanceMonitor?.endMetric(metricId, true);
-      }
     } catch (error) {
-      // 记录失败
-      if (metricId) {
-        this.performanceMonitor?.endMetric(metricId, false, error as Error);
-      }
       console.error('处理选区时出错:', error);
     }
   }
@@ -230,12 +210,6 @@ export class SelectionManager {
    * 将 SerializedSelection 转换为 RangeData 格式
    */
   private convertSelectionToRange(selectionData: SerializedSelection): RangeData {
-    // 开始性能监控
-    const metricId = this.performanceMonitor?.startMetric(
-      MetricType.DATA_TRANSFORM,
-      'convertSelectionToRange'
-    );
-    
     // 添加防御性检查
     if (!selectionData) {
       console.error('[SelectionManager] convertSelectionToRange: selectionData is undefined');
@@ -411,25 +385,11 @@ export class SelectionManager {
     if (!this.currentRange || !this.isValidRange(this.currentRange)) {
       return null;
     }
-    
-    const metricId = this.performanceMonitor?.startMetric(
-      MetricType.SELECTION_SERIALIZE,
-      'getCurrentRangeData'
-    );
-    
+
     try {
       const selectionData = await this.selectionRestore.serialize();
-      const result = selectionData ? this.convertSelectionToRange(selectionData) : null;
-      
-      if (metricId) {
-        this.performanceMonitor?.endMetric(metricId, true);
-      }
-      
-      return result;
+      return selectionData ? this.convertSelectionToRange(selectionData) : null;
     } catch (error) {
-      if (metricId) {
-        this.performanceMonitor?.endMetric(metricId, false, error as Error);
-      }
       console.error('获取当前选区数据时出错:', error);
       return null;
     }
@@ -437,43 +397,26 @@ export class SelectionManager {
   
   // 恢复选区
   async restoreSelection(rangeData: RangeData): Promise<Range | null> {
-    const metricId = this.performanceMonitor?.startMetric(
-      MetricType.SELECTION_RESTORE,
-      'restoreSelection',
-      { rangeId: rangeData.id }
-    );
-    
     try {
       const selectionData = this.convertRangeToSelection(rangeData);
       const result = await this.selectionRestore.restore(selectionData);
-      
+
       if (result.success && result.range) {
         this.currentRange = result.range;
-        
+
         // 恢复选区到浏览器
         const currentSelection = this.selectionRestore.getCurrentSelection();
         if (currentSelection.selection) {
           currentSelection.selection.removeAllRanges();
           currentSelection.selection.addRange(result.range);
         }
-        
-        if (metricId) {
-          this.performanceMonitor?.endMetric(metricId, true);
-        }
-        
+
         return result.range;
       }
-      
-      if (metricId) {
-        this.performanceMonitor?.endMetric(metricId, false);
-      }
-      
+
       console.warn('选区恢复失败:', result.error);
       return null;
     } catch (error) {
-      if (metricId) {
-        this.performanceMonitor?.endMetric(metricId, false, error as Error);
-      }
       console.error('恢复选区时出错:', error);
       return null;
     }
@@ -481,20 +424,14 @@ export class SelectionManager {
   
   // 高亮选区 - 使用新包的高亮功能
   async highlightRange(rangeData: RangeData, duration: number = 0): Promise<string | null> {
-    const metricId = this.performanceMonitor?.startMetric(
-      MetricType.SELECTION_HIGHLIGHT,
-      'highlightRange',
-      { rangeId: rangeData.id, duration }
-    );
-    
     try {
       const selectionData = this.convertRangeToSelection(rangeData);
       const result = await this.selectionRestore.restore(selectionData);
-      
+
       if (result.success && result.range) {
         // 获取高亮器并应用高亮
         const highlighter = this.selectionRestore.getHighlighter();
-        
+
         // 设置高亮样式 - 恢复原来好看的样式
         highlighter.registerTypeStyle('comment', {
           backgroundColor: 'rgba(255, 193, 7, 0.3)',
@@ -502,34 +439,23 @@ export class SelectionManager {
           cursor: 'pointer',
           transition: 'all 0.2s ease'
         });
-        
+
         // 应用高亮
         const highlightId = highlighter.highlightWithType(result.range, 'comment', true);
-        
+
         // 如果指定了持续时间，自动清除高亮
         if (duration > 0) {
           setTimeout(() => {
             highlighter.clearHighlight();
           }, duration);
         }
-        
-        if (metricId) {
-          this.performanceMonitor?.endMetric(metricId, true);
-        }
-        
+
         return highlightId;
       }
-      
-      if (metricId) {
-        this.performanceMonitor?.endMetric(metricId, false);
-      }
-      
+
       console.warn('高亮选区失败:', result.error);
       return null;
     } catch (error) {
-      if (metricId) {
-        this.performanceMonitor?.endMetric(metricId, false, error as Error);
-      }
       console.error('高亮选区时出错:', error);
       return null;
     }
@@ -558,18 +484,12 @@ export class SelectionManager {
     highlightIds: string[];
     errors: string[];
   }> {
-    const metricId = this.performanceMonitor?.startMetric(
-      MetricType.SELECTION_HIGHLIGHT,
-      'highlightTextInContainers',
-      { textCount: Array.isArray(text) ? text.length : 1, containerCount: containers.length }
-    );
-    
     try {
       // 使用容器的默认选择器，如果没有指定
       const targetContainers = containers.length > 0 ? containers : [this.getContainerSelector()];
-      
+
       // 创建组合的交互处理器：同时调用全局处理器和插件处理器
-      const combinedInteractionHandler = options.onInteraction 
+      const combinedInteractionHandler = options.onInteraction
         ? (event: SelectionInteractionEvent, instance: SelectionInstance) => {
             // 先调用全局处理器（用于日志、埋点等）
             this.handleSelectionInteraction(event, instance);
@@ -580,7 +500,7 @@ export class SelectionManager {
             // 只有全局处理器
             this.handleSelectionInteraction(event, instance);
           };
-      
+
       // 使用新包的文本高亮功能
       const result = await this.selectionRestore.highlightTextInContainers(
         text,
@@ -593,18 +513,10 @@ export class SelectionManager {
           onInteraction: combinedInteractionHandler
         }
       );
-      
-      if (metricId) {
-        this.performanceMonitor?.endMetric(metricId, true);
-      }
-      
+
       console.log(`文本高亮完成: ${result.success}/${result.total} 个匹配项成功高亮`);
       return result;
-      
     } catch (error) {
-      if (metricId) {
-        this.performanceMonitor?.endMetric(metricId, false, error as Error);
-      }
       console.error('文本高亮时出错:', error);
       return {
         success: 0,
@@ -631,25 +543,10 @@ export class SelectionManager {
   
   // 批量高亮多个选区
   async highlightMultipleRanges(rangeDataList: RangeData[]): Promise<{ success: number; total: number; errors: string[] }> {
-    const metricId = this.performanceMonitor?.startMetric(
-      MetricType.SELECTION_HIGHLIGHT,
-      'highlightMultipleRanges',
-      { count: rangeDataList.length }
-    );
-    
     try {
       const selectionDataList = rangeDataList.map(rangeData => this.convertRangeToSelection(rangeData));
-      const result = await this.selectionRestore.highlightSelections(selectionDataList);
-      
-      if (metricId) {
-        this.performanceMonitor?.endMetric(metricId, true);
-      }
-      
-      return result;
+      return await this.selectionRestore.highlightSelections(selectionDataList);
     } catch (error) {
-      if (metricId) {
-        this.performanceMonitor?.endMetric(metricId, false, error as Error);
-      }
       console.error('批量高亮选区时出错:', error);
       return { success: 0, total: rangeDataList.length, errors: [String(error)] };
     }
@@ -707,12 +604,6 @@ export class SelectionManager {
   }
   
   private emit<K extends keyof RangeSDKEvents>(event: K, ...args: Parameters<RangeSDKEvents[K]>) {
-    const metricId = this.performanceMonitor?.startMetric(
-      MetricType.EVENT_EMIT,
-      `emit_${event}`,
-      { event, listenerCount: this.listeners.get(event)?.length || 0 }
-    );
-    
     const eventListeners = this.listeners.get(event);
     if (eventListeners) {
       eventListeners.forEach(listener => {
@@ -722,10 +613,6 @@ export class SelectionManager {
           console.error(`Error in ${event} listener:`, error);
         }
       });
-    }
-    
-    if (metricId) {
-      this.performanceMonitor?.endMetric(metricId, true);
     }
   }
   
@@ -989,12 +876,7 @@ export class SelectionManager {
     this.currentRange = null;
     this.activeSelections.clear();
   }
-  
-  // 设置性能监控器
-  setPerformanceMonitor(monitor: IPerformanceMonitor): void {
-    this.performanceMonitor = monitor;
-  }
-  
+
   /**
    * 获取内部的 SelectionRestore SDK 实例
    * 允许外部直接访问 SDK 的所有功能进行深度操作

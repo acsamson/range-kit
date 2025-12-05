@@ -5,7 +5,6 @@
 
 import { logDebug, logWarn, logInfo } from '../debug/logger';
 import { SpatialIndex } from './spatial-index';
-import { PerformanceMonitor } from './performance-monitor';
 
 // 全局点击防抖计时器
 let globalLastClickTime = 0;
@@ -63,12 +62,6 @@ export function setupHighlightInteractionHandlers(
     highlightCount: highlightedRanges.length,
     indexingTime: `${indexingTime.toFixed(2)}ms`,
     stats: spatialIndex.getStats(),
-  });
-
-  // 创建性能监控器
-  const performanceMonitor = new PerformanceMonitor({
-    enabled: highlightedRanges.length > 100, // 高亮数量超过100时启用监控
-    slowThreshold: 16, // 16ms = 60fps
   });
 
   // 为每个容器添加事件委托
@@ -374,11 +367,8 @@ export function setupHighlightInteractionHandlers(
         return null;
       };
 
-      // 使用性能监控包装检测函数
-      const isPointInHighlightedRange = performanceMonitor.measure(
-        'isPointInHighlightedRange',
-        isPointInHighlightedRangeRaw,
-      );
+      // 直接使用检测函数
+      const isPointInHighlightedRange = isPointInHighlightedRangeRaw;
 
       // 鼠标悬浮事件 - 使用节流和防抖避免频繁触发
       let lastHoveredId: string | null = null;

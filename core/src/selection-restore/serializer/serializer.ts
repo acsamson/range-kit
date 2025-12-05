@@ -140,33 +140,26 @@ export function setCustomIdConfig(customIdAttribute?: string): void {
   globalCustomIdAttribute = customIdAttribute || null;
 }
 
+/** 元素标识符结果类型 */
+interface ElementIdentifier {
+  id: string | null;
+  customId: string | null;
+  attribute?: string;
+}
+
 /**
  * 获取元素的标识符（自定义ID或标准ID）
  */
-function getElementIdentifier(element: Element): { id: string | null; customId: string | null; attribute?: string } {
-  const standardId = element.id || null;
-  let customId: string | null = null;
-  let customAttribute: string | undefined;
+function getElementIdentifier(element: Element): ElementIdentifier {
+  const customValue = globalCustomIdAttribute
+    ? element.getAttribute(globalCustomIdAttribute)
+    : null;
 
-  // 检查是否有自定义ID属性
-  if (globalCustomIdAttribute) {
-    const customValue = element.getAttribute(globalCustomIdAttribute);
-    if (customValue) {
-      customId = customValue;
-      customAttribute = globalCustomIdAttribute;
-    }
-  }
-
-  const result: { id: string | null; customId: string | null; attribute?: string } = {
-    id: standardId,
-    customId,
+  return {
+    id: element.id || null,
+    customId: customValue,
+    ...(customValue && globalCustomIdAttribute && { attribute: globalCustomIdAttribute }),
   };
-
-  if (customAttribute) {
-    result.attribute = customAttribute;
-  }
-
-  return result;
 }
 
 /**
