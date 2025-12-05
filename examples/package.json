@@ -1,0 +1,28 @@
+{
+  "name": "@life2code/range-kit-examples",
+  "version": "0.0.1",
+  "private": true,
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "docs:dev": "vitepress dev docs",
+    "docs:build": "vitepress build docs",
+    "docs:preview": "vitepress preview docs"
+  },
+  "dependencies": {
+    "@life2code/range-kit-core": "workspace:*",
+    "@life2code/range-kit-vue": "workspace:*",
+    "@life2code/range-kit-react": "workspace:*",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "vue": "^3.3.0"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.2.1",
+    "@vitejs/plugin-vue": "^5.0.4",
+    "vite": "^5.2.8",
+    "vitepress": "^1.6.4",
+    "vitepress-plugin-mermaid": "^2.0.17"
+  }
+}

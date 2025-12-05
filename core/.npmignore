@@ -1,0 +1,83 @@
+# 系统文件
+.DS_Store
+.history
+*.log*
+
+# 依赖
+node_modules/
+.pnp
+.pnp.js
+.npm
+.yarn-integrity
+
+# 测试相关
+**/__test__/
+**/__tests__/
+**/*.test.*
+**/*.spec.*
+**/test/
+**/tests/
+coverage/
+.nyc_output
+*.lcov
+vitest.config.ts
+vitest.config.js
+
+# 文档相关
+docs/
+*.md
+!README.md
+
+# 示例和演示
+examples/
+example/
+demo/
+demos/
+
+# 开发配置
+.vscode/
+.idea/
+.editorconfig
+.eslintrc*
+.eslintignore
+.prettierrc*
+.prettierignore
+.sonarlint/
+.claude/
+*.config.js
+*.config.ts
+!vite.config.ts
+
+# 构建相关
+src/
+scripts/
+build.sh
+rollup.config.js
+
+# 临时文件
+*.pid
+*.pid.*
+*.report
+*.tsbuildinfo
+.eslintcache
+.evn.local
+.env.*.local
+.rts*
+lib-cov
+.lock-wscript
+.node_repl_history
+
+# 输出目录（只保留dist）
+release/
+output/
+output_resource/
+doc_build/
+
+# TypeScript源文件（只发布编译后的）
+**/*.ts
+!**/*.d.ts
+
+# 其他
+**/*/api/typings/auto-generated
+**/*/adapters/**/index.ts
+**/*/adapters/**/index.js

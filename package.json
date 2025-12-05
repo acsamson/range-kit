@@ -1,0 +1,12 @@
+{
+  "name": "range-kit-monorepo",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "dev:examples": "pnpm -F @life2code/range-kit-examples dev",
+    "build": "pnpm -r build"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.2"
+  }
+}

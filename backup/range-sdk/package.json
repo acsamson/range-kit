@@ -1,0 +1,81 @@
+{
+  "name": "@ad-audit/range-sdk",
+  "version": "1.0.0-beta.18",
+  "type": "module",
+  "types": "./src/index.ts",
+  "main": "./src/index.ts",
+  "module": "./src/index.ts",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "import": "./src/index.ts",
+      "require": "./src/index.ts"
+    },
+    "./vue": {
+      "types": "./vue/index.ts",
+      "import": "./vue/index.ts",
+      "require": "./vue/index.ts"
+    }
+  },
+  "scripts": {
+    "serve": "vitepress dev docs --host",
+    "dev": "vite build --watch",
+    "build": "npm run build:types && npm run build:main && npm run build:vue",
+    "build:main": "BUILD_TARGET=main vite build --watch=false",
+    "build:vue": "BUILD_TARGET=vue vite build --watch=false",
+    "build:types": "tsc --emitDeclarationOnly",
+    "build:watch": "vite build --watch",
+    "build:module": "edenx-module build",
+    "preview": "vite preview",
+    "new": "edenx-module new",
+    "upgrade": "edenx-module upgrade",
+    "docs:build": "vitepress build docs",
+    "docs:preview": "vitepress preview docs",
+    "test": "vitest",
+    "test:ui": "vitest --ui",
+    "test:run": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "test:watch": "vitest --watch"
+  },
+  "dependencies": {
+    "@ad-audit/orz-ui-next": "4.25.3",
+    "@edenx/plugin-tailwind": "1.68.7",
+    "byted-tea-sdk": "5.3.1"
+  },
+  "peerDependencies": {
+    "tailwindcss": "~3.4.14",
+    "vue": "^3.3.4"
+  },
+  "devDependencies": {
+    "@byted/eslint-config-standard": "^3.1.1",
+    "@byted/eslint-config-standard-react": "^2.1.1",
+    "@byted/eslint-config-standard-ts": "^3.1.1",
+    "@edenx/module-tools": "1.68.14",
+    "@edenx/plugin-module-vue": "1.68.7",
+    "@mermaid-js/mermaid-cli": "11.9.0",
+    "@vitejs/plugin-vue": "4.5.0",
+    "@vitejs/plugin-vue-jsx": "3.1.0",
+    "@vitest/ui": "0.34.6",
+    "element-plus": "2.11.4",
+    "eslint-plugin-bes": "workspace:*",
+    "eslint-plugin-prettier": "~5.2.2",
+    "happy-dom": "18.0.1",
+    "prettier": "^3.4.2",
+    "rimraf": "~3.0.2",
+    "sass": "1.69.5",
+    "tailwindcss": "~3.4.14",
+    "typescript": "4.9.5",
+    "vite": "4.5.0",
+    "vitepress": "1.0.0-rc.30",
+    "vitepress-plugin-mermaid": "2.0.17",
+    "vitest": "0.34.6",
+    "vue": "3.3.8"
+  },
+  "files": [
+    "dist"
+  ],
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://bnpm.byted.org/"
+  }
+}
