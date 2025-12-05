@@ -467,15 +467,27 @@ export {
   setCustomIdConfig,
 } from './serializer/serializer';
 export { restoreSelection } from './restorer/restorer';
-// 导出选区实例管理器（使用新名称）
+// 导出选区实例管理器
+// 注意：不再导出 SelectionManager 别名，外层 SelectionManager 是用户侧唯一入口
 export { SelectionInstanceManager } from './manager/selection-instance-manager';
-// 保留旧名称别名，向后兼容
-export { SelectionInstanceManager as SelectionManager } from './manager/selection-instance-manager';
 export type { SelectionTypeConfig } from './types';
 export type { SearchMatchItem, SearchMatchFilter } from './helpers/text-highlight-manager';
-export * from './storage';
+// storage 模块已移除，SDK 采用无状态设计，数据存储由应用层负责
 export * from './core';
-export { createHighlighter, type HighlighterOptions } from './core/selection-highlighter';
+// ========== Highlighter 模块（可独立使用） ==========
+// 用户可以只使用 Highlighter 而不依赖完整的 SelectionRestore
+export {
+  SelectionHighlighter,
+  createHighlighter,
+  type HighlighterOptions,
+} from './core/selection-highlighter';
+
+// CSSBasedHighlighter - 基于 CSS Highlights API 的高亮器实现
+// 高级用户可直接使用此类，无需通过 SelectionHighlighter 包装
+export {
+  CSSBasedHighlighter,
+  isHighlightSupported,
+} from './highlighter/css-highlighter';
 export { convertToSimple, convertSelectionsToSimple } from './utils';
 
 // 导出性能统计模块

@@ -111,13 +111,8 @@ export function useSelectionRestore(options: UseSelectionRestoreOptions) {
   };
 
   const loadCurrentSelections = useCallback(async () => {
-    if (!sdkInstanceRef.current) return;
-    try {
-      const selections = await sdkInstanceRef.current.getAllSelections();
-      setCurrentSelections(selections);
-    } catch (err) {
-      // Silent error
-    }
+    // SDK 是无状态的，选区数据由本地 currentSelections 管理
+    // 此方法保留是为了 API 兼容性
   }, []);
 
   const initSDK = useCallback(async () => {
@@ -136,7 +131,7 @@ export function useSelectionRestore(options: UseSelectionRestoreOptions) {
         registeredTypes: config.selectionStyles,
         highlightStyle: DEFAULT_SELECTION_STYLE,
         enableLogging: false,
-        storage: { type: 'memory' },
+        // SDK 是无状态设计，不需要 storage 配置
         onSelectionBehavior: (event: SelectionBehaviorEvent) => {
           optionsRef.current.onSelectionAction?.(convertBehaviorToAction(event));
         },
@@ -153,7 +148,8 @@ export function useSelectionRestore(options: UseSelectionRestoreOptions) {
       });
 
       if (optionsRef.current.initialSelections?.length) {
-        await instance.importSelections(optionsRef.current.initialSelections);
+        // 将初始选区保存到本地状态
+        setCurrentSelections(optionsRef.current.initialSelections);
         await instance.highlightSelections(optionsRef.current.initialSelections, -1);
       }
 
@@ -196,11 +192,20 @@ export function useSelectionRestore(options: UseSelectionRestoreOptions) {
       const serialized = await sdkInstanceRef.current.serialize(id);
       if (!serialized) return null;
 
+      // 设置选区类型
       serialized.type = type;
-      serialized.appName = optionsRef.current.appId;
 
-      await sdkInstanceRef.current.updateSelection(serialized.id, { type, appName: optionsRef.current.appId });
-      await loadCurrentSelections();
+      // 将选区添加到本地状态管理
+      setCurrentSelections(prev => {
+        const existingIndex = prev.findIndex(s => s.id === serialized.id);
+        if (existingIndex >= 0) {
+          const updated = [...prev];
+          updated[existingIndex] = serialized;
+          return updated;
+        } else {
+          return [...prev, serialized];
+        }
+      });
 
       if (autoHighlight) {
         await sdkInstanceRef.current.restoreWithoutClear(serialized, false);
@@ -213,7 +218,7 @@ export function useSelectionRestore(options: UseSelectionRestoreOptions) {
       setError(msg);
       throw err;
     }
-  }, [loadCurrentSelections]);
+  }, []);
 
   const restoreSelections = useCallback(async (
     selections: SerializedSelection[],
@@ -223,10 +228,21 @@ export function useSelectionRestore(options: UseSelectionRestoreOptions) {
 
     try {
       setIsLoading(true);
-      await sdkInstanceRef.current.importSelections(selections);
+      // 将选区数据保存到本地状态
+      setCurrentSelections(prev => {
+        const updated = [...prev];
+        selections.forEach(selection => {
+          const existingIndex = updated.findIndex(s => s.id === selection.id);
+          if (existingIndex >= 0) {
+            updated[existingIndex] = selection;
+          } else {
+            updated.push(selection);
+          }
+        });
+        return updated;
+      });
       const scrollIndex = enableAutoScroll ? 0 : -1;
       await sdkInstanceRef.current.highlightSelections(selections, scrollIndex);
-      await loadCurrentSelections();
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Failed to restore selections';
       setError(msg);
@@ -234,7 +250,7 @@ export function useSelectionRestore(options: UseSelectionRestoreOptions) {
     } finally {
       setIsLoading(false);
     }
-  }, [loadCurrentSelections]);
+  }, []);
 
   const clearAllSelections = useCallback(() => {
     sdkInstanceRef.current?.clearHighlight();
@@ -243,15 +259,24 @@ export function useSelectionRestore(options: UseSelectionRestoreOptions) {
   const deleteSelection = useCallback(async (selectionId: string) => {
     if (!sdkInstanceRef.current) throw new Error('SDK not initialized');
     try {
-      await sdkInstanceRef.current.deleteSelection(selectionId);
-      await loadCurrentSelections();
+      // 从本地状态中移除
+      setCurrentSelections(prev => prev.filter(s => s.id !== selectionId));
+      // 清除高亮并重新高亮剩余选区
+      sdkInstanceRef.current.clearHighlight();
+      // 注意：需要在状态更新后重新高亮，这里使用 setTimeout 确保状态已更新
+      setTimeout(async () => {
+        const remaining = currentSelections.filter(s => s.id !== selectionId);
+        if (remaining.length > 0 && sdkInstanceRef.current) {
+          await sdkInstanceRef.current.highlightSelections(remaining, -1);
+        }
+      }, 0);
       optionsRef.current.onSelectionDeleted?.(selectionId);
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Failed to delete selection';
       setError(msg);
       throw err;
     }
-  }, [loadCurrentSelections]);
+  }, [currentSelections]);
 
   return {
     isInitialized,

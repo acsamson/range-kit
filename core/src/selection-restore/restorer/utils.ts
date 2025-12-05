@@ -119,11 +119,21 @@ export const calculateStructuralSimilarity: StructuralSimilarityCalculator = (el
 
 /**
  * 根据文本内容查找相似元素
+ * @param text - 要搜索的文本
+ * @param threshold - 相似度阈值，默认 0.8
+ * @param container - 搜索范围容器，必须指定以避免全局搜索
  */
-export function findElementsByText(text: string, threshold: number = 0.8): SimilarityCandidate[] {
+export function findElementsByText(text: string, threshold: number = 0.8, container?: Element): SimilarityCandidate[] {
+  // 严格模式：必须指定容器
+  const searchRoot = container;
+  if (!searchRoot) {
+    console.warn('[findElementsByText] 未指定搜索容器，返回空结果');
+    return [];
+  }
+
   const candidates: SimilarityCandidate[] = [];
   const walker = document.createTreeWalker(
-    document.body,
+    searchRoot,
     NodeFilter.SHOW_TEXT,
     null,
   );
@@ -149,10 +159,20 @@ export function findElementsByText(text: string, threshold: number = 0.8): Simil
 
 /**
  * 根据结构指纹查找相似元素
+ * @param fingerprint - 结构指纹
+ * @param threshold - 相似度阈值，默认 0.7
+ * @param container - 搜索范围容器，必须指定以避免全局搜索
  */
-export function findElementsByStructure(fingerprint: StructuralFingerprint, threshold: number = 0.7): SimilarityCandidate[] {
+export function findElementsByStructure(fingerprint: StructuralFingerprint, threshold: number = 0.7, container?: Element): SimilarityCandidate[] {
+  // 严格模式：必须指定容器
+  const searchRoot = container;
+  if (!searchRoot) {
+    console.warn('[findElementsByStructure] 未指定搜索容器，返回空结果');
+    return [];
+  }
+
   const candidates: SimilarityCandidate[] = [];
-  const elements = document.querySelectorAll(fingerprint.tagName);
+  const elements = searchRoot.querySelectorAll(fingerprint.tagName);
 
   elements.forEach(element => {
     const similarity = calculateStructuralSimilarity(element, fingerprint);

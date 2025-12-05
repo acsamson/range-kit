@@ -65,14 +65,17 @@ export class SelectionBehaviorMonitor {
 
   /**
    * 获取需要监听的容器列表
+   * 注意：必须配置 enabledContainers，不再回退到 document.body
    */
   private getContainers(): Element[] {
-    if (this.config.enabledContainers?.length) {
-      return this.config.enabledContainers
-        .map(selector => document.querySelector(selector))
-        .filter(Boolean) as Element[];
+    if (!this.config.enabledContainers?.length) {
+      // 严格模式：必须配置容器，不再回退到 document.body
+      console.warn('[SelectionBehaviorMonitor] 未配置 enabledContainers，选区行为监控将不生效');
+      return [];
     }
-    return [document.body];
+    return this.config.enabledContainers
+      .map(selector => document.querySelector(selector))
+      .filter(Boolean) as Element[];
   }
 
   /**

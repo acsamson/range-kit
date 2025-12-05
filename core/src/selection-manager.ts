@@ -21,8 +21,10 @@ import {
   SelectionBehaviorType
 } from './selection-restore';
 import { OverlapType } from './selection-restore/helpers/overlap-detector';
-import { MarkType, ContainerNotFoundError, RestoreError, SerializationError } from './types';
+import { MarkType } from './types';
 import type { RangeData, RangeSDKEvents, MarkData } from './types';
+import { type ILogger, noopLogger, consoleLogger } from './common/logger';
+import { ContainerNotFoundError, RestoreFailedError } from './common/errors';
 
 // 导入子模块
 import { convertSelectionToRange, convertRangeToSelection } from './selection-manager/data-converter';
@@ -39,6 +41,14 @@ interface ExtendedSelectionInteractionEvent extends BaseSelectionInteractionEven
 type SelectionInteractionEvent = ExtendedSelectionInteractionEvent;
 
 
+/**
+ * SelectionManager 配置选项
+ */
+export interface SelectionManagerOptions {
+  /** 日志器实例，默认为 noopLogger（生产环境静默） */
+  logger?: ILogger
+}
+
 export class SelectionManager {
   private listeners: Map<keyof RangeSDKEvents, Function[]> = new Map();
   private isSelecting = false;
@@ -47,6 +57,7 @@ export class SelectionManager {
   private activeSelections: Map<string, RangeData> = new Map();
   private container: HTMLElement;
   private containerId: string;
+  private logger: ILogger;
   private boundHandlers: {
     selectionChange: () => void;
     mouseUp: () => void;
@@ -57,18 +68,22 @@ export class SelectionManager {
    * 创建选区管理器
    *
    * @param containerId - 容器元素的 ID（必须存在于 DOM 中）
-   * @throws {SelectionManagerInitError} 如果找不到指定 ID 的元素
+   * @param options - 配置选项（可选）
+   * @throws {ContainerNotFoundError} 如果找不到指定 ID 的元素
    *
    * @example
    * ```typescript
-   * // 正确用法：传入元素 ID
+   * // 基础用法：传入元素 ID
    * const manager = new SelectionManager('article-content');
    *
-   * // 错误用法：传入 Element 对象（不再支持）
-   * // const manager = new SelectionManager(document.body); // 会报类型错误
+   * // 启用调试日志
+   * import { consoleLogger } from '@range-kit/core';
+   * const manager = new SelectionManager('article-content', {
+   *   logger: consoleLogger
+   * });
    * ```
    */
-  constructor(containerId: string) {
+  constructor(containerId: string, options: SelectionManagerOptions = {}) {
     const el = document.getElementById(containerId);
     if (!el) {
       throw new ContainerNotFoundError(containerId);
@@ -76,8 +91,10 @@ export class SelectionManager {
 
     this.container = el;
     this.containerId = containerId;
+    // 默认使用 noopLogger（生产环境静默），用户可传入 consoleLogger 启用日志
+    this.logger = options.logger ?? noopLogger;
 
-    const options: SelectionRestoreOptions = {
+    const restoreOptions: SelectionRestoreOptions = {
       maxRetries: 3,
       fuzzyMatchThreshold: 0.8,
       contextLength: 50,
@@ -95,7 +112,7 @@ export class SelectionManager {
       }
     };
 
-    this.selectionRestore = createSelectionRestore(options);
+    this.selectionRestore = createSelectionRestore(restoreOptions);
 
     this.boundHandlers = {
       selectionChange: this.handleSelectionChange.bind(this),
@@ -120,23 +137,23 @@ export class SelectionManager {
   }
 
   private handleMouseDown() {
-    console.log('[SelectionManager] 鼠标按下，开始选择');
+    this.logger.debug('鼠标按下，开始选择');
     this.isSelecting = true;
   }
 
   private handleMouseUp() {
-    console.log('[SelectionManager] 鼠标松开，isSelecting:', this.isSelecting);
+    this.logger.debug('鼠标松开，isSelecting:', this.isSelecting);
     if (!this.isSelecting) return;
     this.isSelecting = false;
 
     const selection = window.getSelection();
     if (!selection || selection.isCollapsed) {
-      console.log('[SelectionManager] 没有有效的选区（可能是点击操作）');
+      this.logger.debug('没有有效的选区（可能是点击操作）');
       return;
     }
 
     setTimeout(() => {
-      console.log('[SelectionManager] 延迟后开始处理选区');
+      this.logger.debug('延迟后开始处理选区');
       this.processSelection();
     }, 10);
   }
@@ -151,23 +168,23 @@ export class SelectionManager {
   }
 
   private async processSelection() {
-    console.log('[SelectionManager] 开始处理拖拽选区');
+    this.logger.debug('开始处理拖拽选区');
     const currentSelection = this.selectionRestore.getCurrentSelection();
 
     if (!currentSelection.selection || !currentSelection.range) {
-      console.log('[SelectionManager] 没有有效的拖拽选区');
+      this.logger.debug('没有有效的拖拽选区');
       return;
     }
 
     const range = currentSelection.range;
 
     if (!this.isValidRange(range)) {
-      console.log('[SelectionManager] 选区无效');
+      this.logger.debug('选区无效');
       return;
     }
 
     if (!this.isRangeInContainer(range)) {
-      console.log('[SelectionManager] 选区不在容器内');
+      this.logger.debug('选区不在容器内');
       return;
     }
 
@@ -179,7 +196,7 @@ export class SelectionManager {
         this.emit('range-selected', rangeData);
       }
     } catch (error) {
-      console.error('处理选区时出错:', error);
+      this.logger.error('处理选区时出错:', error);
     }
   }
 
@@ -216,9 +233,9 @@ export class SelectionManager {
     const result = await this.selectionRestore.restore(selectionData);
 
     if (!result.success || !result.range) {
-      throw new RestoreError(
-        `选区恢复失败: ${result.error || '未知错误'}`,
-        { rangeData, layer: result.layer, layerName: result.layerName }
+      throw new RestoreFailedError(
+        result.error || '未知错误',
+        result.layer
       );
     }
 
@@ -238,9 +255,9 @@ export class SelectionManager {
     const result = await this.selectionRestore.restore(selectionData);
 
     if (!result.success || !result.range) {
-      throw new RestoreError(
+      throw new RestoreFailedError(
         `高亮选区失败: ${result.error || '未知错误'}`,
-        { rangeData, layer: result.layer, layerName: result.layerName }
+        result.layer
       );
     }
 
@@ -354,9 +371,11 @@ export class SelectionManager {
     if (eventListeners) {
       eventListeners.forEach(listener => {
         try {
-          (listener as any)(...args);
+          // 注意：由于 TypeScript 限制，这里需要使用类型断言
+          // 监听器的类型在 on() 方法中已经验证
+          (listener as (...params: Parameters<RangeSDKEvents[K]>) => void)(...args);
         } catch (error) {
-          console.error(`Error in ${event} listener:`, error);
+          this.logger.error(`事件 ${event} 监听器执行出错:`, error);
         }
       });
     }
@@ -376,11 +395,11 @@ export class SelectionManager {
     this.emit('selection-behavior', behaviorEvent);
 
     if (event.type === 'click') {
-      const selection = event.selection as any;
-      console.log('🎯 选区点击事件 - 完整 selection 信息:', {
+      const selection = event.selection;
+      this.logger.debug('选区点击事件 - 完整 selection 信息:', {
         text: selection.text,
         overlappedTexts: selection.overlappedTexts,
-        hasOverlap: !!selection.overlappedTexts && selection.overlappedTexts?.length > 1,
+        hasOverlap: !!selection.overlappedTexts && selection.overlappedTexts.length > 1,
         overlapCount: selection.overlappedTexts?.length || 1,
         selectionId: instance.id,
         overlappedRanges: overlappedRanges
@@ -388,7 +407,7 @@ export class SelectionManager {
 
       const selectionData = instance.data || event.selection;
       if (!selectionData) {
-        console.warn('[SelectionManager] 没有找到选区数据');
+        this.logger.warn('没有找到选区数据');
         return;
       }
       const rangeData = convertSelectionToRange(selectionData);

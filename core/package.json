@@ -17,10 +17,13 @@
     "build": "tsup",
     "lint": "eslint src",
     "type-check": "tsc --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "test:watch": "vitest"
   },
   "devDependencies": {
     "@types/node": "^20.11.0",
+    "@vitest/coverage-v8": "^1.6.1",
     "jsdom": "^27.2.0",
     "tsup": "^8.0.1",
     "typescript": "^5.7.2",

@@ -1,5 +1,6 @@
 /**
  * API 子模块导出
+ * 注意：storage-api 已移除，SDK 采用无状态设计
  */
 
 // 核心 API
@@ -20,22 +21,6 @@ export {
   highlightAllSelectionsScrollToMiddle,
 } from './batch-api';
 export type { BatchAPIDependencies } from './batch-api';
-
-// 存储 API
-export {
-  getAllSelections,
-  getAllSelectionsSimple,
-  deleteSelection,
-  clearAllSelections,
-  updateSelection,
-  importSelections,
-  getStats,
-  exportData,
-  importData,
-  cleanupOldData,
-  getCurrentPageStats,
-} from './storage-api';
-export type { StorageAPIDependencies } from './storage-api';
 
 // 选区操作 API
 export {

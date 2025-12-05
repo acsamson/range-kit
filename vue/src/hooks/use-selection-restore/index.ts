@@ -127,7 +127,7 @@ export function useSelectionRestore(options: UseSelectionRestoreOptions): UseSel
         registeredTypes: config.selectionStyles,
         highlightStyle: DEFAULT_SELECTION_STYLE,
         enableLogging: false,
-        storage: { type: 'memory' as const },
+        // SDK 是无状态设计，不需要 storage 配置
         // 选区行为回调 - 转换为统一的 onSelectionAction
         onSelectionBehavior: (event: SelectionBehaviorEvent) => {
           if (options.onSelectionAction) {
@@ -180,15 +180,12 @@ export function useSelectionRestore(options: UseSelectionRestoreOptions): UseSel
   // ========== 核心方法 ==========
 
   /**
-   * 加载当前所有选区
+   * 刷新当前选区列表（从内存状态）
+   * SDK 是无状态的，选区由 Hook 本地管理
    */
   const loadCurrentSelections = async () => {
-    if (!sdkInstance) return
-    try {
-      currentSelections.value = await sdkInstance.getAllSelections()
-    } catch (err) {
-      // 静默处理
-    }
+    // SDK 是无状态的，选区数据由本地 currentSelections 管理
+    // 此方法保留是为了 API 兼容性
   }
 
   /**
@@ -219,11 +216,16 @@ export function useSelectionRestore(options: UseSelectionRestoreOptions): UseSel
       const serializedSelection = await sdkInstance.serialize(id)
       if (!serializedSelection) return null
 
+      // 设置选区类型
       serializedSelection.type = type
-      serializedSelection.appName = config.appId
 
-      await sdkInstance.updateSelection(serializedSelection.id, { type, appName: config.appId })
-      await loadCurrentSelections()
+      // 将选区添加到本地状态管理
+      const existingIndex = currentSelections.value.findIndex(s => s.id === serializedSelection.id)
+      if (existingIndex >= 0) {
+        currentSelections.value[existingIndex] = serializedSelection
+      } else {
+        currentSelections.value.push(serializedSelection)
+      }
 
       // 自动高亮新保存的选区（不清除其他高亮）
       if (autoHighlight) {
@@ -240,7 +242,7 @@ export function useSelectionRestore(options: UseSelectionRestoreOptions): UseSel
 
   /**
    * 恢复选区
-   * 会同时高亮选区并将数据保存到 storage
+   * 高亮选区并将数据保存到本地状态
    */
   const restoreSelections = async (
     selections: SerializedSelection[],
@@ -251,15 +253,19 @@ export function useSelectionRestore(options: UseSelectionRestoreOptions): UseSel
     try {
       isLoading.value = true
 
-      // 先导入选区数据到 storage
-      await sdkInstance.importSelections(selections)
+      // 将选区数据保存到本地状态
+      selections.forEach(selection => {
+        const existingIndex = currentSelections.value.findIndex(s => s.id === selection.id)
+        if (existingIndex >= 0) {
+          currentSelections.value[existingIndex] = selection
+        } else {
+          currentSelections.value.push(selection)
+        }
+      })
 
-      // 再高亮显示
+      // 高亮显示
       const scrollIndex = enableAutoScroll ? 0 : -1
       await sdkInstance.highlightSelections(selections, scrollIndex)
-
-      // 刷新当前选区列表
-      await loadCurrentSelections()
     } catch (err) {
       error.value = err instanceof Error ? err.message : '恢复选区失败'
       throw err
@@ -284,8 +290,16 @@ export function useSelectionRestore(options: UseSelectionRestoreOptions): UseSel
     if (!sdkInstance) throw new Error('SDK未初始化')
 
     try {
-      await sdkInstance.deleteSelection(selectionId)
-      await loadCurrentSelections()
+      // 从本地状态中移除
+      const index = currentSelections.value.findIndex(s => s.id === selectionId)
+      if (index >= 0) {
+        currentSelections.value.splice(index, 1)
+      }
+      // 清除高亮（重新高亮剩余的选区）
+      sdkInstance.clearHighlight()
+      if (currentSelections.value.length > 0) {
+        await sdkInstance.highlightSelections(currentSelections.value, -1)
+      }
       options.onSelectionDeleted?.(selectionId)
     } catch (err) {
       error.value = err instanceof Error ? err.message : '删除选区失败'
@@ -300,7 +314,9 @@ export function useSelectionRestore(options: UseSelectionRestoreOptions): UseSel
     if (!sdkInstance) throw new Error('SDK未初始化')
 
     try {
-      await sdkInstance.clearAllSelections()
+      // 清除高亮
+      sdkInstance.clearHighlight()
+      // 清空本地状态
       currentSelections.value = []
       // 重置导航索引
       navigationIndex.value = -1

@@ -1,4 +1,4 @@
-import type { HighlightStyle, SelectionTypeConfig } from '../../../src/core/selection-restore'
+import type { SelectionHighlightStyle as HighlightStyle, SelectionTypeConfig } from '@life2code/range-kit-core'
 import { DEFAULT_SELECTION_STYLE } from '../use-selection-restore/constants'
 
 /**

@@ -33,15 +33,18 @@ export function findElementsByStructure(
 ): StructureCandidate[] {
   const candidates: StructureCandidate[] = [];
 
-  // 根节点限定: 如果指定了rootNodeId，只在该节点内查找
+  // 根节点限定: 优先使用指定的 rootNodeId，否则回退到 document（带警告）
   let rootNode: Element | Document = document;
   if (containerConfig?.rootNodeId) {
     const foundNode = document.getElementById(containerConfig.rootNodeId);
     if (!foundNode) {
-      logWarn('L4', '指定的根节点不存在，降级到document', { rootNodeId: containerConfig.rootNodeId });
+      logWarn('L4', 'L4警告：指定的根节点不存在，将搜索整个文档', { rootNodeId: containerConfig.rootNodeId });
     } else {
       rootNode = foundNode;
     }
+  } else {
+    // 仅在开发环境记录警告，生产环境静默
+    logDebug('L4', 'L4注意：未指定 rootNodeId，将在整个文档中搜索');
   }
 
   // 智能标签查找：优先原始标签，然后尝试语义相关标签

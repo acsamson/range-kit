@@ -279,20 +279,18 @@ export class SelectionEventHandlers {
 
   /**
    * 更新鼠标样式
+   * 注意：仅在已配置的容器内更新样式，不再回退到 document.body
    * @param selectionId - 选区ID或null
    */
   updateCursorStyle(selectionId: string | null): void {
     const containers = this.config.options.enabledContainers || [];
     const targetElements: HTMLElement[] = [];
 
-    if (containers.length === 0) {
-      targetElements.push(document.body);
-    } else {
-      containers.forEach(selector => {
-        const elements = document.querySelectorAll<HTMLElement>(selector);
-        elements.forEach(el => targetElements.push(el));
-      });
-    }
+    // 严格模式：仅在配置的容器内操作，不再回退到 document.body
+    containers.forEach(selector => {
+      const elements = document.querySelectorAll<HTMLElement>(selector);
+      elements.forEach(el => targetElements.push(el));
+    });
 
     let cursorStyle = '';
     if (selectionId) {
