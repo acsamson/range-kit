@@ -115,7 +115,7 @@ export function useSearchHighlight(options: UseSearchHighlightOptions): UseSearc
           caseSensitive: searchOptions.caseSensitive ?? false,
           wholeWord: searchOptions.wholeWord ?? false,
           maxMatches: searchOptions.maxMatches,
-          filterMatches: searchOptions.filterMatches
+          filterMatches: searchOptions.filterMatches as ((items: unknown[], keyword: string) => unknown[]) | undefined
         })
 
         if (!searchKeywords.value.includes(keyword)) {

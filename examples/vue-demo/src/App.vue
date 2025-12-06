@@ -9,7 +9,7 @@ import { useSelectionCallbacks } from './hooks/use-selection-callbacks'
 import { useSelectionActions } from './hooks/use-selection-actions'
 import { useSearchActions } from './hooks/use-search-actions'
 import { DEFAULT_SELECTION_TYPES } from './constants'
-import { mockSelections } from './mock'
+import { mockSelections } from './services/mock'
 
 const containerRef = ref<HTMLElement | null>(null)
 const content = ref(`

@@ -7,8 +7,7 @@
 - **文档工具**: `VitePress` (生成静态文档站)
 
 ### 命名规范
-- 文件和文件夹：小写加破折号（kebab-case），如 `block-editor`
-- 组件文件名：大驼峰（PascalCase），如 `BlockEditor.tsx` (仅限 UI 组件)
+- **所有文件和文件夹**：必须使用小写加破折号（kebab-case），如 `block-editor.tsx`, `app.vue`
 - 变量与函数：小驼峰（camelCase）
 - 常量：全大写下划线（UPPER_SNAKE_CASE）
 

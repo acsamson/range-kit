@@ -4,7 +4,7 @@
  */
 
 // 导出 Vue Hooks
-export * from './hooks'
+export * from './composables'
 
 // 导出相关类型（来自核心模块）
 export type {
