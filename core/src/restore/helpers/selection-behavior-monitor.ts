@@ -10,7 +10,7 @@ import {
   SerializedSelection,
   RestoreResult,
 } from '../types';
-import { SELECTION_BEHAVIOR_DEBOUNCE_MS } from '../constants';
+import { SELECTION_BEHAVIOR_DEBOUNCE_MS } from '../../constants';
 import { detectOverlappingSelections, detectRangeOverlap } from './overlap-detector';
 
 /**

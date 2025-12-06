@@ -11,7 +11,7 @@ import {
   L4_WEIGHT_ADJUSTMENTS,
   L4_SIMILARITY_WEIGHTS,
   L4_CANDIDATE_LIMITS,
-} from '../../../constants';
+} from '../../../../constants';
 
 /**
  * 结构匹配候选结果

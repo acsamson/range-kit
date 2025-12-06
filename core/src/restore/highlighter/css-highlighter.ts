@@ -7,7 +7,7 @@ import {
   HighlightEventListener,
 } from '../types';
 import { logSuccess, logWarn, logDebug } from '../debug/logger';
-import { SCROLL_MARGIN } from '../constants';
+import { SCROLL_MARGIN } from '../../constants';
 
 // 检查浏览器是否支持CSS Highlights API
 export const isHighlightSupported = typeof Highlight !== 'undefined' && typeof CSS?.highlights !== 'undefined';

@@ -1,5 +1,5 @@
 import type { SerializedSelection, RestoreResult } from '../types';
-import { MAX_SELECTIONS_TO_CHECK } from '../constants';
+import { MAX_SELECTIONS_TO_CHECK } from '../../constants';
 
 /**
  * 重叠类型枚举

@@ -8,7 +8,7 @@ import { SerializedSelection } from '../../../types';
 import { intelligentTextMatch } from '../../utils';
 import { logDebug, logWarn } from '../../../debug/logger';
 import { findEndElementCandidates } from './candidate-finder';
-import { L4_WEIGHT_ADJUSTMENTS } from '../../../constants';
+import { L4_WEIGHT_ADJUSTMENTS } from '../../../../constants';
 
 /**
  * 尝试创建跨元素Range

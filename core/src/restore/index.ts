@@ -25,7 +25,7 @@ import {
   type DebugLogEntry,
 } from './debug/logger';
 
-import { DEFAULT_OPTIONS } from './constants';
+import { DEFAULT_OPTIONS } from '../constants';
 
 import {
   ConfigManager,

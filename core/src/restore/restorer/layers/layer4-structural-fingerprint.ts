@@ -15,7 +15,7 @@
 import { SerializedSelection, ContainerConfig, LayerRestoreResult } from '../../types';
 import { applySelectionWithStrictValidation } from '../utils';
 import { logDebug, logWarn } from '../../debug/logger';
-import { L4_SIMILARITY_THRESHOLDS, L4_CANDIDATE_LIMITS } from '../../constants';
+import { L4_SIMILARITY_THRESHOLDS, L4_CANDIDATE_LIMITS } from '../../../constants';
 
 // 导入子模块
 import {

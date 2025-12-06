@@ -6,7 +6,7 @@
 
 import { logDebug } from '../../../debug/logger';
 import { getSemanticTags } from '../../helpers/l4-helpers';
-import { L4_CANDIDATE_LIMITS } from '../../../constants';
+import { L4_CANDIDATE_LIMITS } from '../../../../constants';
 
 /**
  * 查找结束元素候选

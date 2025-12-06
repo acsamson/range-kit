@@ -7,7 +7,7 @@
 import { SerializedSelection, ContainerConfig, LayerRestoreResult } from '../../types';
 import { applySelectionWithStrictValidation, intelligentTextMatch } from '../utils';
 import { logDebug, logWarn, logError, logSuccess } from '../../debug/logger';
-import { L3_CANDIDATE_LIMITS, L3_TEXT_MATCHING, L3_SIMILARITY_WEIGHTS, L3_CLASS_SIMILARITY } from '../../constants';
+import { L3_CANDIDATE_LIMITS, L3_TEXT_MATCHING, L3_SIMILARITY_WEIGHTS, L3_CLASS_SIMILARITY } from '../../../constants';
 
 export function restoreByMultipleAnchors(data: SerializedSelection, containerConfig?: ContainerConfig): LayerRestoreResult {
   const { restore, text } = data;

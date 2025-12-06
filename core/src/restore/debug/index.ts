@@ -1,9 +1,9 @@
 /**
  * 调试系统入口文件
- * 提供统一的调试日志接口
+ * 从 common/debug 重新导出，保持向后兼容
  */
 
-export * from './logger';
+export * from '../../common/debug';
 
 // 重新导出主要接口供外部使用
-export { debugLogger as default } from './logger';
+export { debugLogger as default } from '../../common/debug';

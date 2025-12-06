@@ -33,3 +33,18 @@ export type {
   OperationResult,
   Destroyable,
 } from './types'
+
+// 调试日志系统
+export {
+  LogLevel,
+  debugLogger,
+  logDebug,
+  logInfo,
+  logWarn,
+  logError,
+  logSuccess,
+  PerformanceTimer,
+  logPerformance,
+  type DebugLogEntry,
+  type LogSubscriber,
+} from './debug'

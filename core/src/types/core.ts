@@ -2,7 +2,7 @@
  * 核心数据结构类型定义
  */
 
-import type { OverlapType } from '../helpers/overlap-detector';
+import type { OverlapType } from '../restore/helpers/overlap-detector';
 
 /**
  * 单层恢复算法的返回结果
@@ -192,8 +192,8 @@ export enum RestoreStatus {
 // 选区类型为字符串类型，支持动态注册
 export type SelectionType = string;
 
-// 内置的默认类型
-export const DEFAULT_SELECTION_TYPE = 'default';
+// 内置的默认类型（从 constants 重新导出）
+export { DEFAULT_SELECTION_TYPE } from '../constants';
 
 /**
  * 序列化选区数据结构
