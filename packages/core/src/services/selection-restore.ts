@@ -23,7 +23,7 @@ import {
   SelectionHighlighter,
   SelectionText,
 } from './wrappers';
-import { SelectionSession } from '../manager';
+import { SelectionSession } from '../session';
 
 import {
   logInfo,

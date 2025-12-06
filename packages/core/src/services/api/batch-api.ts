@@ -10,7 +10,7 @@ import type {
 } from '../../types';
 
 import type { SelectionValidator, SelectionRestorer, SelectionHighlighter } from '../wrappers';
-import type { SelectionSession } from '../../manager';
+import type { SelectionSession } from '../../session';
 
 import { logInfo, logWarn } from '../../common/debug';
 

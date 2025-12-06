@@ -169,7 +169,7 @@ export {
  * @internal 此类为内部实现，API 可能会变更。
  * 如需使用其功能，请通过 SelectionManager 或 SelectionRestore。
  */
-export { SelectionSession } from './manager';
+export { SelectionSession } from './session';
 
 
 // 类型定义（从 types 模块导出）

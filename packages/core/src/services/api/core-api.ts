@@ -16,7 +16,7 @@ import type {
   SelectionRestorer,
   SelectionHighlighter,
 } from '../wrappers';
-import type { SelectionSession } from '../../manager';
+import type { SelectionSession } from '../../session';
 
 import { logInfo, logWarn, logError } from '../../common/debug';
 

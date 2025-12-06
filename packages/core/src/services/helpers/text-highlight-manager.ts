@@ -4,7 +4,7 @@
  */
 
 import { SelectionText, SelectionHighlighter } from '../wrappers';
-import { SelectionSession } from '../../manager';
+import { SelectionSession } from '../../session';
 import { logSuccess, logDebug } from '../../common/debug';
 import { setupHighlightInteractionHandlers, HighlightedRange, HighlightInteractionEvent } from './highlight-event-handler';
 import { detectRangeOverlap, OverlapType } from '../../common/overlap-detector';

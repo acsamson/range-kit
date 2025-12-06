@@ -6,7 +6,7 @@
 import type { HighlightStyle, SelectionTypeConfig, SerializedSelection } from '../../types';
 
 import type { SelectionValidator, SelectionHighlighter } from '../wrappers';
-import type { SelectionSession } from '../../manager';
+import type { SelectionSession } from '../../session';
 
 /**
  * 选区操作 API 依赖接口
