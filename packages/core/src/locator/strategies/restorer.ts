@@ -6,6 +6,7 @@
  */
 
 import type { SerializedRange, RestoreResult, ContainerConfig } from '../types';
+import type { SerializedSelection } from '../../types';
 
 // 从 locator/restorer 导入恢复层实现
 import {
@@ -35,12 +36,13 @@ export function restoreRange(
   const startTime = performance.now();
 
   // 转换数据格式以兼容现有恢复层
-  const selectionData = {
+  // SerializedRange 和 SerializedSelection 结构兼容，只是来源不同
+  const selectionData: SerializedSelection = {
     id: data.id,
     text: data.text,
-    type: data.type,
+    type: data.type || 'default',
     restore: data.restore,
-  } as any;
+  };
 
   const config = containerConfig ? {
     enabledContainers: containerConfig.enabledContainers || [],

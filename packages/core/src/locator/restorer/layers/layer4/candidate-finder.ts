@@ -222,7 +222,7 @@ function findBySiblingInfo(
   endTag: string,
 ): void {
   const parent = startElement.parentElement;
-  if (!parent) return;
+  if (!parent || !multipleAnchors.siblingInfo) return;
 
   const siblings = Array.from(parent.children);
   const startIndex = siblings.indexOf(startElement);

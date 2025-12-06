@@ -134,7 +134,7 @@ export class SelectionEventHandlers {
           const interactionEvent: SelectionInteractionEvent = {
             type: 'click',
             originalEvent: event,
-            selection: (instance as any).data,
+            selection: instance.data,
             ...(offset !== undefined && { offsetInSelection: offset }),
           };
 
@@ -183,7 +183,7 @@ export class SelectionEventHandlers {
           const interactionEvent: SelectionInteractionEvent = {
             type: 'contextmenu',
             originalEvent: event,
-            selection: (instance as any).data,
+            selection: instance.data,
           };
           this.config.options.onSelectionInteraction(interactionEvent, instance);
         }
@@ -218,7 +218,7 @@ export class SelectionEventHandlers {
           const interactionEvent: SelectionInteractionEvent = {
             type: 'doubleclick',
             originalEvent: event,
-            selection: (instance as any).data,
+            selection: instance.data,
           };
           this.config.options.onSelectionInteraction(interactionEvent, instance);
         }
@@ -272,7 +272,7 @@ export class SelectionEventHandlers {
             const interactionEvent: SelectionInteractionEvent = {
               type: 'hover',
               originalEvent: new MouseEvent('mousemove', { clientX: x, clientY: y }),
-              selection: (instance as any).data,
+              selection: instance.data,
             };
             this.config.options.onSelectionInteraction(interactionEvent, instance);
           }
@@ -300,7 +300,7 @@ export class SelectionEventHandlers {
     if (selectionId) {
       const instance = this.config.getSelectionInstance(selectionId);
       if (instance) {
-        const type = (instance as any).type || 'default';
+        const type = instance.type || 'default';
         const typeConfig = this.config.registeredTypes.get(type);
         if (typeConfig?.style?.cursor) {
           cursorStyle = typeConfig.style.cursor;

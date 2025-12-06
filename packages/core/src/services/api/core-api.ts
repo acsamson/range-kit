@@ -7,6 +7,7 @@ import type {
   SerializedSelection,
   RestoreResult,
   SelectionRestoreOptions,
+  SelectionTypeConfig,
 } from '../../types';
 
 import type {
@@ -30,7 +31,7 @@ export interface CoreAPIDependencies {
   highlighter: SelectionHighlighter;
   selectionManager: SelectionSession;
   options: Required<SelectionRestoreOptions>;
-  getRegisteredType: (type: string) => any;
+  getRegisteredType: (type: string) => SelectionTypeConfig | undefined;
 }
 
 /**

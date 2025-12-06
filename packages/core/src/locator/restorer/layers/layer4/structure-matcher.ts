@@ -49,7 +49,7 @@ export function findElementsByStructure(
 
   // 智能标签查找：优先原始标签，然后尝试语义相关标签
   const targetTag = fingerprint.tagName.toLowerCase();
-  let elements = rootNode.querySelectorAll(targetTag);
+  let elements: Element[] = Array.from(rootNode.querySelectorAll(targetTag));
 
   // 如果原始标签找不到足够的候选元素，尝试语义相关的标签
   let searchTags = [targetTag];
@@ -58,12 +58,11 @@ export function findElementsByStructure(
     searchTags = [targetTag, ...semanticTags];
 
     // 重新查找所有语义相关的元素
-    const allElements: Element[] = [];
+    elements = [];
     searchTags.forEach(tag => {
       const tagElements = Array.from(rootNode.querySelectorAll(tag));
-      allElements.push(...tagElements);
+      elements.push(...tagElements);
     });
-    elements = allElements as any;
 
     logDebug('L4', `L4标签降级：原始${targetTag}元素不足，扩展搜索`, {
       originalTag: targetTag,

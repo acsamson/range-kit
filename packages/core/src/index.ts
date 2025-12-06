@@ -171,8 +171,6 @@ export {
  */
 export { SelectionSession } from './manager';
 
-/** @deprecated 请使用 SelectionSession */
-export { SelectionInstanceManager } from './manager';
 
 // 类型定义（从 types 模块导出）
 export type {
@@ -208,31 +206,6 @@ export type { OverlappedRange } from './common/overlap-detector';
 
 // 工具函数
 export { convertToSimple, convertSelectionsToSimple } from './common/convert';
-
-// ========== 兼容性导出（将在 1.0 版本移除） ==========
-
-/**
- * @deprecated 请使用 Highlighter 替代。将在 1.0 版本移除。
- */
-export {
-  SelectionHighlighter,
-  createHighlighter,
-  type HighlighterOptions,
-} from './services/wrappers';
-
-/**
- * @deprecated 请使用 CSSPainter 替代。将在 1.0 版本移除。
- */
-export { CSSPainter as CSSBasedHighlighter } from './highlighter/painters';
-export { isHighlightSupported } from './highlighter/painters';
-
-/**
- * @deprecated 请使用 SelectionManager 的文本搜索功能替代。将在 1.0 版本移除。
- */
-export {
-  SelectionText,
-  type TextSearchOptions,
-} from './services/wrappers';
 
 // ========== 性能统计模块 ==========
 export {
