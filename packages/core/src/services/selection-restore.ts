@@ -23,7 +23,7 @@ import {
   SelectionHighlighter,
   SelectionText,
 } from './wrappers';
-import { SelectionInstanceManager } from '../manager';
+import { SelectionSession } from '../manager';
 
 import {
   logInfo,
@@ -65,7 +65,7 @@ export class SelectionRestore implements SelectionRestoreAPI {
   private restorer: SelectionRestorer;
   private highlighter: SelectionHighlighter;
   private textSearcher: SelectionText;
-  private selectionManager: SelectionInstanceManager;
+  private selectionManager: SelectionSession;
 
   // 配置
   private options: Required<SelectionRestoreOptions>;
@@ -213,7 +213,12 @@ export class SelectionRestore implements SelectionRestoreAPI {
   async highlightSelections(
     selections: SerializedSelection[],
     scrollToIndex: number = -1,
-  ): Promise<{ success: number; total: number; errors: string[] }> {
+  ): Promise<{
+    success: number;
+    total: number;
+    errors: string[];
+    results: Array<{ id: string; success: boolean; layer?: number; layerName?: string; error?: string }>;
+  }> {
     return BatchAPI.highlightSelections(this.getBatchAPIDeps(), selections, scrollToIndex);
   }
 

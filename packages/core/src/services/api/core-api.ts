@@ -15,7 +15,7 @@ import type {
   SelectionRestorer,
   SelectionHighlighter,
 } from '../wrappers';
-import type { SelectionInstanceManager } from '../../manager';
+import type { SelectionSession } from '../../manager';
 
 import { logInfo, logWarn, logError } from '../../common/debug';
 
@@ -28,7 +28,7 @@ export interface CoreAPIDependencies {
   serializer: SelectionSerializerWrapper;
   restorer: SelectionRestorer;
   highlighter: SelectionHighlighter;
-  selectionManager: SelectionInstanceManager;
+  selectionManager: SelectionSession;
   options: Required<SelectionRestoreOptions>;
   getRegisteredType: (type: string) => any;
 }
@@ -126,7 +126,7 @@ export async function restore(
       // 应用高亮并获取 highlightId
       const highlightId = deps.highlighter.highlightWithType(result.range, selectionType, autoScroll);
 
-      // 在 SelectionInstanceManager 中创建选区实例（内存管理，非持久化存储）
+      // 在 SelectionSession 中创建选区实例（内存管理，非持久化存储）
       const instance = deps.selectionManager.addSelection(selectionData);
       (instance as { currentRange?: Range }).currentRange = result.range;
       deps.selectionManager.registerActiveRange(selectionData.id, result.range);

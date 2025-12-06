@@ -1,12 +1,12 @@
 /**
- * 选区实例管理器 (SelectionInstanceManager)
+ * 选区会话管理器 (SelectionSession)
  *
- * 负责管理所有活跃的选区实例
+ * 负责管理所有活跃的选区实例状态
  * 组合各个子模块提供完整的选区管理功能
  *
- * 注意：此类与外层 SelectionManager 不同
- * - SelectionInstanceManager: 管理 SelectionRestore 内部的选区实例
- * - SelectionManager: SDK 的主入口，管理用户交互和事件
+ * 架构位置：
+ * - SelectionManager: SDK 的主入口，管理用户交互和事件（用户层）
+ * - SelectionSession: 管理 SelectionRestore 内部的选区状态（引擎层）
  *
  * 架构设计：
  * - SelectionRegistry: 纯数据存储（选区实例、Range、高亮ID）
@@ -38,10 +38,10 @@ import { SelectionCoordinator } from './selection-coordinator';
 import type { DetectedSelectionInfo } from './types';
 
 /**
- * 选区实例管理器
+ * 选区会话管理器
  * 负责管理所有活跃的选区实例，提供统一的选区操作接口
  */
-export class SelectionInstanceManager {
+export class SelectionSession {
   // ===== 核心注册表 =====
   /** 选区数据注册表 */
   private registry: SelectionRegistry;
@@ -138,7 +138,7 @@ export class SelectionInstanceManager {
     this.eventHandlers.setupEventListeners();
     this.eventHandlers.setupSelectionCompleteListener();
 
-    logInfo('selection-manager', '选区管理器已初始化', {
+    logInfo('selection-session', '选区会话已初始化', {
       enableMonitoring: options.enableSelectionMonitoring,
       monitoringInterval: options.monitoringInterval,
       defaultType: options.defaultSelectionType,
@@ -332,6 +332,6 @@ export class SelectionInstanceManager {
     this.registry.clear();
     this.styleRegistry.clear();
 
-    logInfo('selection-manager', '选区管理器已销毁');
+    logInfo('selection-session', '选区会话已销毁');
   }
 }

@@ -1,12 +1,15 @@
 /**
- * 选区实例管理器模块导出
+ * 选区会话管理器模块导出
  *
- * 统一导出选区实例管理器及其相关类型和子模块
+ * 统一导出选区会话管理器及其相关类型和子模块
  */
 
-// 主管理器 - 内部选区实例管理
-// 注意：不再导出 SelectionManager 别名，避免与外层 SelectionManager 冲突
-export { SelectionInstanceManager } from './selection-instance-manager';
+// 主管理器 - 内部选区会话管理（引擎层）
+export { SelectionSession } from './selection-session';
+
+// 向后兼容别名
+/** @deprecated 请使用 SelectionSession */
+export { SelectionSession as SelectionInstanceManager } from './selection-session';
 
 // 核心注册表和协调器
 export { SelectionRegistry } from './selection-registry';

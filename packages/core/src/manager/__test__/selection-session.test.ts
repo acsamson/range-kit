@@ -1,14 +1,14 @@
 /**
- * SelectionInstanceManager 测试
+ * SelectionSession 测试
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { SelectionInstanceManager } from '../selection-instance-manager';
+import { SelectionSession } from '../selection-session';
 import type { Highlighter, SelectionRestoreOptions, SerializedSelection } from '../../types';
 import { createDefaultRestoreData } from '../../locator/__test__/test-helpers';
 
-describe('SelectionInstanceManager', () => {
-  let manager: SelectionInstanceManager;
+describe('SelectionSession', () => {
+  let manager: SelectionSession;
   let mockHighlighter: Highlighter;
   let mockOptions: Required<SelectionRestoreOptions>;
 
@@ -18,7 +18,7 @@ describe('SelectionInstanceManager', () => {
     mockHighlighter = createMockHighlighter();
     mockOptions = createMockOptions();
 
-    manager = new SelectionInstanceManager(mockHighlighter, mockOptions);
+    manager = new SelectionSession(mockHighlighter, mockOptions);
   });
 
   afterEach(() => {
@@ -39,7 +39,7 @@ describe('SelectionInstanceManager', () => {
         ],
       });
 
-      const managerWithTypes = new SelectionInstanceManager(mockHighlighter, optionsWithTypes);
+      const managerWithTypes = new SelectionSession(mockHighlighter, optionsWithTypes);
 
       const typeConfig = managerWithTypes.getRegisteredType('custom');
       expect(typeConfig).toBeDefined();

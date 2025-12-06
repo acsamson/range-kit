@@ -15,7 +15,7 @@ import {
   SelectionHighlighter,
   SelectionText,
 } from '../wrappers';
-import { SelectionInstanceManager } from '../../manager';
+import { SelectionSession } from '../../manager';
 
 /**
  * 核心组件集合
@@ -26,7 +26,7 @@ export interface CoreComponents {
   restorer: SelectionRestorer;
   highlighter: SelectionHighlighter;
   textSearcher: SelectionText;
-  selectionManager: SelectionInstanceManager;
+  selectionManager: SelectionSession;
 }
 
 /**
@@ -69,8 +69,8 @@ export function createCoreComponents(options: Required<SelectionRestoreOptions>)
   // 5. 文本搜索器
   const textSearcher = new SelectionText();
 
-  // 6. 选区实例管理器
-  const selectionManager = new SelectionInstanceManager(
+  // 6. 选区会话管理器
+  const selectionManager = new SelectionSession(
     highlighter.getHighlighter(),
     options,
   );

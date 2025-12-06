@@ -4,7 +4,7 @@
  */
 
 import { SelectionText, SelectionHighlighter } from '../wrappers';
-import { SelectionInstanceManager } from '../../manager';
+import { SelectionSession } from '../../manager';
 import { logSuccess, logDebug } from '../../common/debug';
 import { setupHighlightInteractionHandlers, HighlightedRange, HighlightInteractionEvent } from './highlight-event-handler';
 import { detectRangeOverlap, OverlapType } from '../../common/overlap-detector';
@@ -59,7 +59,7 @@ export interface TextHighlightResult {
 export interface TextHighlightDependencies {
   textSearcher: SelectionText;
   highlighter: SelectionHighlighter;
-  selectionManager: SelectionInstanceManager;
+  selectionManager: SelectionSession;
 }
 
 /**

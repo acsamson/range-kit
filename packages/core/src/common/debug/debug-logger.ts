@@ -269,7 +269,7 @@ export class PerformanceTimer {
   /**
    * 结束计时并记录
    */
-  end(additionalData?: unknown): number {
+  end(additionalData?: Record<string, unknown>): number {
     if (IS_PRODUCTION) {
       return 0;
     }
