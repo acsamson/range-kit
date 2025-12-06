@@ -1,76 +1,80 @@
- 看起来像是一个重构到一半就烂尾的工程。虽然核心模块（Locator,
-  Highlighter）拆分得当，但在业务组装层（Manager/Services）出现了严重
-  的架构精神分裂。
+ 一句话评价：工程基建完善，类型系统严谨，但架构分层存在明显的语义模糊
+  与过度设计，"Services" 与 "Manager" 的职责边界混乱是最大败笔。
 
   ---
 
-  1. 架构混乱：Manager 到底在哪里？(扣 2 分)
-  你最严重的问题在于 services 和 manager
-  这两个目录的职责定义完全崩塌。
+  🔴 核心槽点 (Critical Issues)
 
-   * 名不副实：你有一个目录叫 manager，里面放了
-     selection-instance-manager.ts。但你真正的对外核心类
-     SelectionManager 却躲在 services 目录下。
-       * 如果不看代码，谁能想到 services 里面放的是核心状态机？
-       * SelectionManager (in services) 和 SelectionInstanceManager
-         (in manager) 名字过于相似，且存在逻辑重叠。SelectionManager
-         实际上是一个 "Facade"（外观模式），它不应该叫
-         Manager，或者它应该直接在根目录/核心目录，而不是在一个模糊的
-         services 文件夹里。
-   * 抽象泄漏：SelectionManager.getSelectionRestoreInstance()
-     直接把内部引擎暴露出来了。这意味着你的封装失败了，外部使用者随时
-     可以绕过 Manager 去操作底层，那要这个 Manager 何用？
+  1. 架构分层混乱 (Architecture Smell)
+  你遵循了 DDD (领域驱动设计) 的某些概念（如 locator, highlighter
+  拆分得很好），但在核心业务编排上“翻车”了。
+   * `services` vs `manager` 傻傻分不清：
+       * src/services/selection-manager.ts 自称是“用户侧唯一入口”。
+       * src/manager/selection-instance-manager.ts
+         还要特意写注释解释“注意：此类与外层 SelectionManager 不同”。
+       * 锐评：如果一个类需要写注释来解释它和另一个名字极像的类有什么
+         不同，说明命名失败。这增加了巨大的心智负担。
+   * `services` 成了垃圾桶：在 src/services 下，我看到了 api,
+     factories, helpers, wrappers, overlap-detector.ts。这是典型的“God
+     Folder”反模式。原本应该属于独立领域的逻辑（如重叠检测）被扔进了一
+     个通用的 services 桶里。
 
-  2. 模块边界不清：Utils 的流离失所 (扣 1.5 分)
-  你犯了典型的 "Common 垃圾桶" 错误，且制造了人为的割裂。
+  2. API 导出策略臃肿 (Bloated API Surface)
+  查看 src/index.ts，你导出了太多东西：
+   * 混杂的抽象级别：既导出了高级的 SelectionManager，又导出了底层的
+     serializeSelection 策略函数，还有
+     CSSPainter。用户到底该用哪个？没有通过 facade 模式严格收口。
+   * 兼容性包袱：代码里保留了大量“兼容性导出（保持向后兼容）”。作为一
+     个版本号 0.0.1 的库，现在就在背历史包袱？应该在早期果断通过
+     Breaking Change 清理 API，而不是让新用户面对两套 Highlighter
+     API。
 
-   * 转换逻辑分裂：
-       * core/src/common/convert.ts: 处理 SerializedSelection ->
-         Simple
-       * core/src/services/data-converter.ts: 处理 SerializedSelection
-         <-> RangeData
-       * 锐评：这两个文件做的是同一类事情（数据变形），却因为目标不同
-         被强行拆分到不同层级。common
-         应该只放纯粹的、无业务含义的工具（如深拷贝、UUID生成），包含
-         具体业务模型（SerializedSelection）的转换逻辑绝对不该出现在
-         common 里。
-
-  3. 类型系统的妥协 (扣 1 分)
-  在 SelectionManager.ts 中，我看到了这样的代码：
-   1 // 注意：由于 TypeScript 限制，这里需要使用类型断言
-   2 (listener as (...params: Parameters<RangeSDKEvents[K]>) => void
-     )(...args);
-  这通常不是 TypeScript 的限制，而是你的泛型设计太懒了。你用
-  Function[]
-  存储监听器，导致类型信息丢失，最后不得不在运行时强转。这是为了“跑通
-  代码”而牺牲类型安全的典型反面教材。
-
-  4. 优点（挽尊项）
-   * Locator/Highlighter 拆分得当：从 index.ts
-     的导出看，你确实在尝试将核心算法（Locator）、渲染（Highlighter）
-     和交互（Interaction）解耦，这是 DDD（领域驱动设计）的正确方向。
-   * 文档注释规范：SelectionManager 的注释写得很详细，Example
-     也很清晰，这点比大多数开源项目强。
+  3. 过度设计迹象 (Over-engineering)
+   * SelectionRegistry vs StyleRegistry vs Coordinator：在 manager
+     目录下，你拆分了极为细致的 Registry 和
+     Coordinator。对于一个前端库来说，除非你的状态机极度复杂，否则这种
+     后端微服务式的拆分往往带来的是代码跳转的噩梦，而非维护性的提升。
 
   ---
 
-  改进建议 (Action Items)
+  🟢 值得肯定的点 (Pros)
 
-   1. 重命名与归位：
-       * 将 services 目录改名为 facade 或直接移入 src/
-         根级（如果它是主要入口）。
-       * 或者，将 SelectionManager 移入 manager
-         目录，统管一切，不要搞两个平行的管理层。
-   2. 合并 Converter：
-       * 创建一个 transformers 或 serializers 目录。
-       * 把 common/convert.ts 和 services/data-converter.ts 合并。
-   3. 修复事件类型：
-       * 重写 SelectionManager 的 listeners Map，使用强类型的
-         EventEmitter 模式（参考 mitt 或自行实现严格泛型约束），消灭
-         as 断言。
-   4. 严控 Common：
-       * 把所有依赖 types/*.ts 业务定义的代码从 common
-         里踢出去。common 只能依赖语言原生类型。
+   1. 工程化配置极佳：
+       * 使用了 tsup + vitest 的现代组合，构建和测试配置非常标准。
+       * tsconfig.json 开启了 strict: true，这是高质量库的基线。
+       * package.json 的 exports 字段配置规范，支持 ESM/CJS 双格式。
 
-  总结： 代码能跑，但看着难受。如果不尽快治理 services 和 manager
-  的关系，随着功能增加，这里会变成维护者的噩梦。
+   2. 注释质量极高：
+       * 代码中的 Javadoc
+         风格注释非常详尽（虽然部分是为了解释复杂的架构），架构图
+         ASCII Art
+         好评。这表明开发者对逻辑流是非常清晰的，只是架构表达上略显繁
+         琐。
+
+   3. Locator 模块设计清晰：
+       * src/locator
+         模块看起来是最清爽的。它遵循了单一职责原则（SRP），只负责
+         Range 和 JSON
+         的互转，且声明“无副作用”。这是核心库中最具价值的部分。
+
+  ---
+
+  💡 改进建议 (Actionable Advice)
+
+   1. 重构 `services` 目录：
+       * 废弃 services 目录。
+       * 将 SelectionManager（入口）移动到 src/facade
+         或直接作为根目录下的 Client.ts。
+       * 将 overlap-detector 移入 src/domain/overlap 或作为 locator
+         的子功能。
+
+   2. 明确 Manager 的定义：
+       * 将 SelectionInstanceManager 重命名为 SelectionSession 或
+         SelectionState，明确它管理的是“内部状态”而非“对外业务”。
+
+   3. 清理 `index.ts`：
+       * 区分 index.ts (主要出口) 和 internal.ts (如果必须暴露底层
+         API)。
+       * 在 0.x
+         版本阶段，立刻删除所有标记为“兼容性导出”的代码。不要在起步阶
+         段就容忍坏味道。

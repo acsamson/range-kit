@@ -1,7 +1,8 @@
 // 从 types/core 直接导入，避免通过 types/index.ts 的循环依赖
-import type { SerializedSelection, RestoreResult } from '../types/core';
-// 重新导出 OverlapType（定义在 types/core.ts）
+import type { SerializedSelection, RestoreResult, OverlappedRange } from '../types/core';
+// 重新导出 OverlapType 和 OverlappedRange（定义在 types/core.ts）
 export { OverlapType } from '../types/core';
+export type { OverlappedRange } from '../types/core';
 import { OverlapType } from '../types/core';
 import { MAX_SELECTIONS_TO_CHECK } from '../constants';
 
@@ -80,24 +81,8 @@ export interface OverlapDetectionResult {
   error: string | null;
 }
 
-/**
- * 重叠选区信息接口
- * 表示一个与当前选区重叠的已保存选区的完整信息
- */
-export interface OverlappedRange {
-  /** 选区ID */
-  selectionId: string;
-  /** 选区文本 */
-  text: string;
-  /** 重叠类型 */
-  overlapType: OverlapType;
-  /** Range对象 */
-  range: Range;
-  /** 重叠部分的文本 */
-  overlappedText: string;
-  /** 原始选区数据 */
-  selectionData: SerializedSelection;
-}
+// OverlappedRange 接口现在从 types/core.ts 导入，避免重复定义
+// 请参见文件顶部的 export type { OverlappedRange } from '../types/core';
 
 /**
  * 调试数据接口

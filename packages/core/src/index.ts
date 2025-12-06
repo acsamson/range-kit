@@ -118,23 +118,57 @@ export type {
   SelectionPosition,
 } from './interaction';
 
-// ========== 高级 API（整合模块） ==========
+// ============================================
+// 用户侧 API（推荐使用）
+// ============================================
 
-// SelectionManager - 用户侧唯一入口
+/**
+ * SelectionManager - 用户侧唯一入口
+ *
+ * 这是大多数用户应该使用的 API，提供：
+ * - 选区恢复和高亮
+ * - 事件监听（range-selected, mark-clicked 等）
+ * - 重叠检测
+ *
+ * @example
+ * ```typescript
+ * const manager = new SelectionManager('container-id');
+ * manager.on('range-selected', (data) => console.log(data));
+ * ```
+ */
 export {
   SelectionManager,
   type SelectionManagerOptions,
   type ContainerInput,
 } from './services';
 
-// SelectionRestore - 内部引擎（高级用法）
+// ============================================
+// 高级 API（需要了解内部机制）
+// ============================================
+
+/**
+ * SelectionRestore - 内部协调引擎
+ *
+ * 适用于需要更细粒度控制的高级用户。
+ * 大多数场景下，使用 SelectionManager 即可。
+ */
 export {
   SelectionRestore,
   createSelectionRestore,
   getDefaultInstance,
 } from './services/selection-restore';
 
-// SelectionInstanceManager - 选区实例管理
+// ============================================
+// 内部 API（可能会变更，不建议直接使用）
+// @internal
+// ============================================
+
+/**
+ * SelectionInstanceManager - 内部选区实例管理器
+ *
+ * @internal 此类为内部实现，API 可能会变更。
+ * 如需使用其功能，请通过 SelectionManager 或 SelectionRestore。
+ */
 export { SelectionInstanceManager } from './manager';
 
 // 类型定义（从 types 模块导出）

@@ -611,10 +611,32 @@ export class SelectionManager {
     this.activeSelections.clear();
   }
 
+  /**
+   * 获取底层 SelectionRestore 实例
+   *
+   * @internal 此方法为内部 API，可能在未来版本中变更或移除
+   * @deprecated 不建议直接使用，请优先使用 SelectionManager 提供的公开方法。
+   * 如果你发现需要使用此方法才能完成某个功能，请提交 issue 说明使用场景，
+   * 我们会考虑将其作为正式 API 支持。
+   *
+   * @returns SelectionRestore 实例
+   */
   getSelectionRestoreInstance(): SelectionRestore {
+    if (process.env.NODE_ENV === 'development') {
+      console.warn(
+        '[range-kit] getSelectionRestoreInstance() 是内部 API，不建议直接使用。' +
+        '如需此功能，请提交 issue: https://github.com/user/range-kit/issues'
+      );
+    }
     return this.selectionRestore;
   }
 
+  /**
+   * 获取容器选择器字符串
+   *
+   * @internal 此方法为内部 API
+   * @returns CSS 选择器字符串
+   */
   getContainerSelectorString(): string {
     return this.getContainerSelector();
   }
