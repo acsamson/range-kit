@@ -247,9 +247,11 @@ export function useSelectionActions(options: UseSelectionActionsOptions) {
    */
   const handlePrintData = (): void => {
     console.group('Current Selections Data')
+    console.log(`Total: ${currentSelections.value.length}`)
+    console.log('IDs:', currentSelections.value.map(s => s.id))
     console.log(currentSelections.value)
     console.groupEnd()
-    alert('选区数据已打印到控制台，请按 F12 查看')
+    alert(`选区数据已打印到控制台 (共 ${currentSelections.value.length} 个)，请按 F12 查看`)
   }
 
   // ========== 返回接口 ==========
