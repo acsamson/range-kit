@@ -19,16 +19,16 @@ import {
   OverlappedRange,
   SelectionBehaviorEvent,
   SelectionBehaviorType
-} from './selection-restore';
-import { OverlapType } from './selection-restore/helpers/overlap-detector';
-import { MarkType } from './types';
-import type { RangeData, RangeSDKEvents, MarkData } from './types';
-import { type ILogger, noopLogger, consoleLogger } from './common/logger';
-import { ContainerNotFoundError, RestoreFailedError } from './common/errors';
+} from '../index';
+import { OverlapType } from '../helpers/overlap-detector';
+import { MarkType } from '../../types';
+import type { RangeData, RangeSDKEvents, MarkData } from '../../types';
+import { type ILogger, noopLogger, consoleLogger } from '../../common/logger';
+import { ContainerNotFoundError, RestoreFailedError } from '../../common/errors';
 
 // 导入子模块
-import { convertSelectionToRange, convertRangeToSelection } from './selection-manager/data-converter';
-import { detectOverlappedRanges, checkRangeOverlap } from './selection-manager/overlap-detector';
+import { convertSelectionToRange, convertRangeToSelection } from './data-converter';
+import { detectOverlappedRanges, checkRangeOverlap } from './overlap-detector';
 
 // 扩展 SelectionInteractionEvent 类型，添加 overlappedTexts 支持
 interface ExtendedSelectionInteractionEvent extends BaseSelectionInteractionEvent {

@@ -87,7 +87,7 @@ export {
   type CoreOverlapResult, 
   type BoundaryComparisons,
   type OverlappedRange as OverlapDetectorOverlappedRange
-} from '../selection-restore/helpers/overlap-detector';
+} from '../restore/helpers/overlap-detector';
 
 // 可序列化的矩形类型（替代 DOMRect）
 export interface SerializableRect {
@@ -337,5 +337,5 @@ export interface RangeSDKEvents {
   'comment-updated': (data: CommentData) => void;
   'highlight-created': (instance: HighlightInstance) => void;
   'highlight-removed': (instance: HighlightInstance) => void;
-  'selection-behavior': (event: import('../selection-restore').SelectionBehaviorEvent) => void;
+  'selection-behavior': (event: import('../restore').SelectionBehaviorEvent) => void;
 }

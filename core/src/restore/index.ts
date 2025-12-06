@@ -506,5 +506,15 @@ export {
   type LayerType,
 } from './restorer/metrics';
 
+// ========== Facade 模块（用户侧入口） ==========
+export {
+  SelectionManager,
+  type SelectionManagerOptions,
+  convertSelectionToRange,
+  convertRangeToSelection,
+  detectOverlappedRanges,
+  checkRangeOverlap,
+} from './facade';
+
 // 默认导出
 export default SelectionRestore;

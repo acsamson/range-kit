@@ -5,7 +5,6 @@
 
 /**
  * RangeKit 错误基类
- * 所有 SDK 错误都继承自此类
  */
 export class RangeKitError extends Error {
   /** 错误码 */

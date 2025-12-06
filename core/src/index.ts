@@ -2,17 +2,30 @@
  * @file Range SDK 主入口文件
  * @description 导出所有公共接口和类型
  *
- * API 设计说明：
- * - SelectionManager：用户侧唯一入口，提供完整的选区管理功能
- * - SelectionRestore：内部实现引擎，高级用户可直接使用
- * - SelectionInstanceManager：内部选区实例管理器，不建议直接使用
+ * 架构设计：
+ * ┌─────────────────────────────────────────────────────────────┐
+ * │                      Range Kit SDK                          │
+ * ├─────────────────────────────────────────────────────────────┤
+ * │  高级 API（推荐使用）                                        │
+ * │  - SelectionManager：用户侧唯一入口                         │
+ * │  - SelectionRestore：内部引擎，高级用户可直接使用            │
+ * ├─────────────────────────────────────────────────────────────┤
+ * │  三层独立模块（可单独使用）                                   │
+ * │  - RangeLocator：定位器（Range ↔ JSON）                     │
+ * │  - Highlighter：高亮器（DOM 绘制）                          │
+ * │  - InteractionManager：交互管理器（事件监听）                │
+ * ├─────────────────────────────────────────────────────────────┤
+ * │  Common 模块                                                │
+ * │  - 日志、错误处理、共享类型                                  │
+ * └─────────────────────────────────────────────────────────────┘
  */
 
-// 导出类型
+// ========== 类型导出 ==========
 export * from './types';
 export { RangeSdkAppIdNameMap } from './constants';
 
-// 导出日志相关
+// ========== Common 模块 ==========
+// 日志
 export {
   type ILogger,
   noopLogger,
@@ -21,7 +34,7 @@ export {
   getDefaultLogger,
 } from './common/logger';
 
-// 导出错误类
+// 错误
 export {
   RangeKitError,
   ContainerNotFoundError,
@@ -33,15 +46,90 @@ export {
   HighlightError,
 } from './common/errors';
 
-// 导出核心功能 - SelectionManager 是用户侧唯一入口
-export * from './selection-manager';
+// 共享类型
+export type {
+  ConfigMode,
+  ContainerConfig as CommonContainerConfig,
+  Position,
+  OperationResult,
+  Destroyable,
+} from './common';
 
-// 导出 selection-restore 的类型和内部引擎（高级用法）
+// ========== 三层独立模块（新架构） ==========
+
+// 1. Locator 模块 - 核心算法层（Range ↔ JSON）
+// 纯计算，无副作用，不操作 DOM 样式
 export {
-  // 内部引擎 - 高级用户可直接使用
+  RangeLocator,
+  createLocator,
+  // 策略函数
+  serializeSelection as locatorSerialize,
+  serializeRange as locatorSerializeRange,
+  restoreRange as locatorRestore,
+  generateUniqueId,
+  setCustomIdConfig,
+} from './locator';
+
+export type {
+  ILocator,
+  LocatorOptions,
+  SerializedRange,
+  RestoreResult as LocatorRestoreResult,
+  RestoreData,
+  AnchorInfo as LocatorAnchorInfo,
+  PathInfo as LocatorPathInfo,
+  StructuralFingerprint as LocatorFingerprint,
+  TextContext as LocatorTextContext,
+} from './locator';
+
+// 2. Highlighter 模块 - 渲染层（DOM 高亮）
+// 只接收 Range，不关心来源
+export {
+  Highlighter,
+  createHighlighter as createNewHighlighter,
+  isHighlightSupported as highlighterSupported,
+  CSSPainter,
+  HighlightEvent,
+} from './highlighter';
+
+export type {
+  IHighlighter,
+  IEventfulHighlighter,
+  HighlightStyle,
+  HighlightEventType,
+  HighlightEventData,
+  HighlightEventListener,
+  HighlighterOptions as NewHighlighterOptions,
+} from './highlighter';
+
+// 3. Interaction 模块 - 事件层（交互监听）
+// 监听 SelectionChange, Click, Hover 等事件
+export {
+  InteractionManager,
+  createInteractionManager,
+  InteractionEventType,
+} from './interaction';
+
+export type {
+  IInteractionManager,
+  InteractionManagerOptions,
+  InteractionEventData,
+  InteractionEventHandler,
+  SelectionPosition,
+} from './interaction';
+
+// ========== 高级 API（整合模块） ==========
+
+// SelectionManager - 用户侧唯一入口（从 selection-restore 导出）
+export {
+  SelectionManager,
+  type SelectionManagerOptions,
+} from './restore';
+
+// SelectionRestore - 内部引擎（高级用法）
+export {
   SelectionRestore,
   createSelectionRestore,
-  // 内部选区实例管理器 - 仅供内部使用
   SelectionInstanceManager,
   // 类型定义
   type SelectionRestoreAPI,
@@ -67,28 +155,22 @@ export {
   type OverlappedRange,
   // 工具函数
   convertToSimple,
-  convertSelectionsToSimple
-} from './selection-restore';
+  convertSelectionsToSimple,
+} from './restore';
 
-// ========== 独立 Highlighter 模块 ==========
-// 用户可以只使用 Highlighter 而不依赖完整的 SelectionRestore/SelectionManager
-// 适用于需要独立高亮功能的场景
+// ========== 兼容性导出（保持向后兼容） ==========
+
+// 独立 Highlighter 模块（旧 API）
 export {
-  // 包装类 - 推荐使用
   SelectionHighlighter,
-  // 工厂函数 - 支持依赖注入
   createHighlighter,
   type HighlighterOptions,
-  // 底层实现 - 高级用户可直接使用
   CSSBasedHighlighter,
   isHighlightSupported,
-} from './selection-restore';
+} from './restore';
 
-// ========== 独立 TextSearch 模块 ==========
-// 用户可以只使用 TextSearcher 而不依赖完整的 SelectionRestore/SelectionManager
-// 适用于需要独立文本搜索功能的场景
+// 独立 TextSearch 模块
 export {
-  // SelectionText - 文本搜索核心类
   SelectionText,
   type TextSearchOptions,
-} from './selection-restore';
+} from './restore';

@@ -3,8 +3,8 @@
  * 负责检测多个选区之间的重叠关系
  */
 
-import type { SelectionRestore, SerializedSelection, OverlappedRange } from '../selection-restore';
-import { detectRangeOverlap, OverlapType } from '../selection-restore/helpers/overlap-detector';
+import type { SelectionRestore, SerializedSelection, OverlappedRange } from '../index';
+import { detectRangeOverlap, OverlapType } from '../helpers/overlap-detector';
 
 /**
  * 检测当前选区与已有选区的重叠关系
