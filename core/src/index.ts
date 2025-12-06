@@ -120,43 +120,57 @@ export type {
 
 // ========== 高级 API（整合模块） ==========
 
-// SelectionManager - 用户侧唯一入口（从 selection-restore 导出）
+// SelectionManager - 用户侧唯一入口
 export {
   SelectionManager,
   type SelectionManagerOptions,
-} from './restore';
+  type ContainerInput,
+} from './services';
 
 // SelectionRestore - 内部引擎（高级用法）
 export {
   SelectionRestore,
   createSelectionRestore,
-  SelectionInstanceManager,
-  // 类型定义
-  type SelectionRestoreAPI,
-  SelectionBehaviorType,
-  type SelectionRestoreOptions,
-  type SerializedSelection,
-  type SelectionBehaviorEvent,
-  type SelectionTypeConfig,
-  type SelectionInteractionEvent,
-  type SelectionInstance,
-  type SelectionCompleteEvent,
-  type RestoreResult,
-  type SelectionStats,
-  type AnchorInfo,
-  type PathInfo,
-  type MultipleAnchorInfo,
-  type TextContext,
-  type SerializedSelectionSimple,
-  type StructuralFingerprint as SelectionStructuralFingerprint,
-  type HighlightStyle as SelectionHighlightStyle,
-  type SearchMatchItem,
-  type SearchMatchFilter,
-  type OverlappedRange,
-  // 工具函数
-  convertToSimple,
-  convertSelectionsToSimple,
-} from './restore';
+  getDefaultInstance,
+} from './services/selection-restore';
+
+// SelectionInstanceManager - 选区实例管理
+export { SelectionInstanceManager } from './manager';
+
+// 类型定义（从 types 模块导出）
+export type {
+  SelectionRestoreAPI,
+  SelectionRestoreOptions,
+  SerializedSelection,
+  SelectionBehaviorEvent,
+  SelectionTypeConfig,
+  SelectionInteractionEvent,
+  SelectionInstance,
+  SelectionCompleteEvent,
+  RestoreResult,
+  SelectionStats,
+  AnchorInfo,
+  PathInfo,
+  MultipleAnchorInfo,
+  TextContext,
+  SerializedSelectionSimple,
+  StructuralFingerprint as SelectionStructuralFingerprint,
+  HighlightStyle as SelectionHighlightStyle,
+} from './types';
+
+export { SelectionBehaviorType } from './types';
+
+// 搜索匹配类型（从 services/helpers 导出）
+export type {
+  SearchMatchItem,
+  SearchMatchFilter,
+} from './services/helpers/text-highlight-manager';
+
+// 重叠检测（从 common 导出）
+export type { OverlappedRange } from './common/overlap-detector';
+
+// 工具函数
+export { convertToSimple, convertSelectionsToSimple } from './common/convert';
 
 // ========== 兼容性导出（保持向后兼容） ==========
 
@@ -165,12 +179,30 @@ export {
   SelectionHighlighter,
   createHighlighter,
   type HighlighterOptions,
-  CSSBasedHighlighter,
-  isHighlightSupported,
-} from './restore';
+} from './services/wrappers';
+
+// CSSBasedHighlighter 别名（向后兼容）
+export { CSSPainter as CSSBasedHighlighter } from './highlighter/painters';
+export { isHighlightSupported } from './highlighter/painters';
 
 // 独立 TextSearch 模块
 export {
   SelectionText,
   type TextSearchOptions,
-} from './restore';
+} from './services/wrappers';
+
+// ========== 性能统计模块 ==========
+export {
+  enableMetrics,
+  disableMetrics,
+  isMetricsEnabled,
+  recordLayerAttempt,
+  recordRestoreResult,
+  getMetrics,
+  resetMetrics,
+  getMetricsReport,
+  getLayerDistribution,
+  type LayerMetrics,
+  type RestoreMetrics,
+  type LayerType,
+} from './locator/restorer/metrics';

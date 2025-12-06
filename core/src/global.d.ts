@@ -2,7 +2,7 @@ import type { RangeSDK } from './core/range-sdk-with-plugins'
 
 export declare global {
   interface Window {
-    __rangesdk__?: RangeSDK & Record<string, any>;
+    __rangesdk__?: RangeSDK & Record<string, unknown>;
   }
 
   // CSS Highlight API type definitions
@@ -13,7 +13,7 @@ export declare global {
     clear(): void;
     delete(range: AbstractRange): boolean;
     entries(): IterableIterator<[AbstractRange, AbstractRange]>;
-    forEach(callbackfn: (value: AbstractRange, value2: AbstractRange, set: Highlight) => void, thisArg?: any): void;
+    forEach(callbackfn: (value: AbstractRange, value2: AbstractRange, set: Highlight) => void, thisArg?: unknown): void;
     has(range: AbstractRange): boolean;
     keys(): IterableIterator<AbstractRange>;
     values(): IterableIterator<AbstractRange>;

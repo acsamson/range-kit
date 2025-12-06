@@ -1,7 +1,9 @@
-import { RangeSdkAppId } from '../types';
-
-// 重新导出类型
-export { RangeSdkAppId } from '../types';
+// Range SDK 应用 ID 枚举（定义在 constants 层，避免与 types 的循环依赖）
+export enum RangeSdkAppId {
+  COMMON = 0, // 通用应用
+  PMS = 1,    // PMS应用
+  RANGE_SDK = 1000, // range-sdk 自己的页面
+}
 
 // 应用ID与名称的映射
 export const RangeSdkAppIdNameMap = {

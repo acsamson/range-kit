@@ -49,7 +49,7 @@ const DEFAULT_OPTIONS: InteractionManagerOptions = {
 interface CachedRangeInfo {
   boundingRect: DOMRect;
   rects: DOMRect[];
-  data?: any;
+  data?: unknown;
 }
 
 /**
@@ -66,7 +66,7 @@ export class InteractionManager implements IInteractionManager {
 
   // 选区管理
   private activeRanges: Map<string, Range> = new Map();
-  private rangeData: Map<string, any> = new Map();
+  private rangeData: Map<string, unknown> = new Map();
   private rangeCache: Map<string, CachedRangeInfo> = new Map();
 
   // 状态
@@ -170,7 +170,7 @@ export class InteractionManager implements IInteractionManager {
 
   // ========== 选区管理 ==========
 
-  registerSelection(id: string, range: Range, data?: any): void {
+  registerSelection(id: string, range: Range, data?: unknown): void {
     this.activeRanges.set(id, range);
     if (data !== undefined) {
       this.rangeData.set(id, data);

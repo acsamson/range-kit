@@ -48,3 +48,16 @@ export {
   type DebugLogEntry,
   type LogSubscriber,
 } from './debug'
+
+// 重叠检测
+export {
+  OverlapType,
+  detectRangeOverlap,
+  detectOverlappingSelections,
+  type BoundaryComparisons,
+  type CoreOverlapResult,
+  type RangeInfo,
+  type OverlapDetectionResult,
+  type OverlappedRange,
+  type OverlapDebugData,
+} from './overlap-detector'

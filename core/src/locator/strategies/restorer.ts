@@ -7,18 +7,18 @@
 
 import type { SerializedRange, RestoreResult, ContainerConfig } from '../types';
 
-// 重用现有的恢复层实现
+// 从 locator/restorer 导入恢复层实现
 import {
   restoreByIdAnchors,
   restoreByOriginalPaths,
   restoreByMultipleAnchors,
   restoreByStructuralFingerprint,
-} from '../../restore/restorer/layers';
+} from '../restorer';
 
 import {
   recordLayerAttempt,
   recordRestoreResult,
-} from '../../restore/restorer/metrics';
+} from '../restorer/metrics';
 
 /**
  * 四层级联恢复算法

@@ -2,7 +2,20 @@
  * 核心数据结构类型定义
  */
 
-import type { OverlapType } from '../restore/helpers/overlap-detector';
+/**
+ * 重叠类型枚举（定义在 types 层，供 common/overlap-detector 使用）
+ * 定义了两个Range之间可能的重叠关系
+ */
+export enum OverlapType {
+  /** 无重叠 */
+  NO_OVERLAP = 'NO_OVERLAP',
+  /** 已存在的选区包含当前选区 */
+  EXISTING_CONTAINS_CURRENT = 'EXISTING_CONTAINS_CURRENT',
+  /** 当前选区包含已存在的选区 */
+  CURRENT_CONTAINS_EXISTING = 'CURRENT_CONTAINS_EXISTING',
+  /** 部分重叠 */
+  PARTIAL_OVERLAP = 'PARTIAL_OVERLAP'
+}
 
 /**
  * 单层恢复算法的返回结果
@@ -313,7 +326,7 @@ export interface LogEntry {
   /** 消息内容 */
   message: string;
   /** 额外数据 */
-  data?: any;
+  data?: unknown;
 }
 
 // 调试日志条目
@@ -323,7 +336,7 @@ export interface DebugLogEntry {
   level: string;
   category: string;
   message: string;
-  data?: any;
+  data?: unknown;
   duration?: number;
   stackTrace?: string;
 }

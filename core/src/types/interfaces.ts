@@ -9,7 +9,8 @@ import type {
   RestoreStatus,
   ContainerConfig,
 } from './core';
-import type { HighlightStyle } from './options';
+// 从 styles.ts 导入，避免与 options.ts 的循环依赖
+import type { HighlightStyle } from './styles';
 
 // 恢复层级函数类型
 export type RestoreLayerFunction = (

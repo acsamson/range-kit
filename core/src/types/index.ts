@@ -1,9 +1,5 @@
-// Range SDK 应用 ID 枚举
-export enum RangeSdkAppId {
-  COMMON = 0, // 通用应用
-  PMS = 1,    // PMS应用
-  RANGE_SDK = 1000, // range-sdk 自己的页面
-}
+// Range SDK 应用 ID 枚举（从 constants 导入，避免循环依赖）
+export { RangeSdkAppId } from '../constants';
 
 // ========== SDK 错误类型定义 ==========
 
@@ -81,13 +77,13 @@ export class ConfigurationError extends RangeSDKError {
   }
 }
 
-// 导出重叠检测相关类型
-export { 
-  OverlapType, 
-  type CoreOverlapResult, 
-  type BoundaryComparisons,
-  type OverlappedRange as OverlapDetectorOverlappedRange
-} from '../restore/helpers/overlap-detector';
+// 导出重叠检测相关类型（OverlapType 现在定义在 core.ts）
+export { OverlapType } from './core';
+export type {
+  CoreOverlapResult,
+  BoundaryComparisons,
+  OverlappedRange as OverlapDetectorOverlappedRange
+} from '../common/overlap-detector';
 
 // 可序列化的矩形类型（替代 DOMRect）
 export interface SerializableRect {
@@ -114,7 +110,7 @@ export interface RangeData {
   rect?: SerializableRect; // 选区位置信息（可序列化）
   contextBefore?: string; // 前置上下文
   contextAfter?: string; // 后置上下文
-  contextFingerprint?: any; // 上下文指纹信息，用于精确定位
+  contextFingerprint?: Record<string, unknown>; // 上下文指纹信息，用于精确定位
   // ID锚点信息
   anchorInfo?: {
     id: string; // 锚点元素的ID
@@ -125,7 +121,7 @@ export interface RangeData {
   multiAnchorInfo?: {
     primaryAnchor?: AnchorCandidate; // 主锚点
     fallbackAnchors?: AnchorCandidate[]; // 备用锚点
-    structuralFingerprint?: StructuralFingerprint; // 结构指纹
+    structuralFingerprint?: LegacyStructuralFingerprint; // 结构指纹（旧版格式）
   };
   isExistingComment?: boolean; // 标记这是一个已存在的评论
   isNewCommentTrigger?: boolean; // 标记这是新选区触发的评论操作
@@ -143,8 +139,9 @@ export interface AnchorCandidate {
   attributes?: Record<string, string>; // 锚点元素的关键属性
 }
 
-// 结构指纹信息
-export interface StructuralFingerprint {
+// 结构指纹信息（旧版，用于 RangeData 兼容）
+// 新版 StructuralFingerprint 从 types/core.ts 导出
+export interface LegacyStructuralFingerprint {
   // 层级特征
   hierarchyPattern: string[]; // 层级标签序列 ["article", "section", "p"]
   depthFromBody: number; // 距离body的深度
@@ -242,20 +239,9 @@ export interface RangeSDKConfig {
   };
 }
 
-// 高亮样式接口
-export interface HighlightStyle {
-  backgroundColor?: string;
-  color?: string;
-  border?: string;
-  borderRadius?: string;
-  padding?: string;
-  opacity?: number;
-  boxShadow?: string;
-  outline?: string; // 新增：使用outline避免影响布局
-  textDecoration?: string; // 新增：使用下划线等文本装饰
-  textShadow?: string; // 新增：文本阴影效果
-  filter?: string; // 新增：滤镜效果
-}
+// 高亮样式接口 - 从 styles.ts 导入并重导出（避免循环依赖）
+import type { HighlightStyle } from './styles';
+export type { HighlightStyle };
 
 // 基于Range API的高亮器接口
 export interface RangeHighlighter {
@@ -328,6 +314,27 @@ export interface HighlightConfig {
   zIndex: number; // z-index层级
 }
 
+// 导入事件类型以便在接口中使用
+import type { SelectionBehaviorEvent as _SelectionBehaviorEvent } from './events';
+
+/**
+ * SDK 错误事件数据
+ */
+export interface SDKErrorEvent {
+  /** 错误码 */
+  code: string;
+  /** 错误消息 */
+  message: string;
+  /** 错误发生的操作 */
+  operation: 'serialize' | 'restore' | 'highlight' | 'interaction' | 'unknown';
+  /** 原始错误对象 */
+  originalError?: Error;
+  /** 错误上下文 */
+  context?: Record<string, unknown>;
+  /** 时间戳 */
+  timestamp: number;
+}
+
 // 事件类型
 export interface RangeSDKEvents {
   'range-selected': (data: RangeData) => void;
@@ -337,5 +344,93 @@ export interface RangeSDKEvents {
   'comment-updated': (data: CommentData) => void;
   'highlight-created': (instance: HighlightInstance) => void;
   'highlight-removed': (instance: HighlightInstance) => void;
-  'selection-behavior': (event: import('../restore').SelectionBehaviorEvent) => void;
+  'selection-behavior': (event: _SelectionBehaviorEvent) => void;
+  /** 错误事件 - 当 SDK 内部发生错误时触发 */
+  'error': (event: SDKErrorEvent) => void;
 }
+
+// 导出核心数据结构类型（从 core.ts）
+export type {
+  LayerRestoreResult,
+  AnchorInfo,
+  AnchorInfo as CoreAnchorInfo,
+  PathInfo,
+  ElementAnchor,
+  SiblingInfo,
+  MultipleAnchorInfo,
+  ParentChainItem,
+  SiblingPattern,
+  StructuralFingerprint,
+  StructuralFingerprint as CoreStructuralFingerprint,
+  TextPosition,
+  TextContext,
+  RestoreData,
+  RuntimeData,
+  SelectionType,
+  SerializedSelection,
+  SerializedSelectionSimple,
+  OverlappedRange,
+  RestoreResult,
+  SelectionStats,
+  LayerStats,
+  SimilarityCandidate,
+  ContainerConfig,
+  LogEntry,
+  DebugLogEntry,
+  ElementPathGenerator,
+  TextSimilarityCalculator,
+  StructuralSimilarityCalculator,
+} from './core';
+
+// 导出枚举值
+export { RestoreStatus, DEFAULT_SELECTION_TYPE, LogLevel } from './core';
+
+// 导出配置选项类型（从 options.ts）
+// 注意：HighlightStyle 已在上方导出
+export type {
+  SelectionTypeConfig,
+  StorageMode,
+  APIStorageHandlers,
+  StorageConfig,
+  StorageFactoryConfig,
+  SelectionRestoreOptions,
+} from './options';
+
+// 向后兼容别名
+export type { HighlightStyle as SelectionHighlightStyle } from './styles';
+
+// 导出事件相关类型（从 events.ts）
+export type {
+  SelectionBehaviorEvent,
+  SelectionBehaviorCallback,
+  SelectionInteractionEvent,
+  SelectionCompleteEvent,
+  SelectionChangeInfo,
+  ActiveRangesChangeEvent,
+  SelectionInstance,
+  SelectionChangeCallback,
+  SelectionInteractionCallback,
+  SelectionCompleteCallback,
+  ActiveRangesChangeCallback,
+} from './events';
+
+// 导出事件枚举
+export { SelectionBehaviorType } from './events';
+
+// 导出接口类型（从 interfaces.ts）
+export type {
+  RestoreLayerFunction,
+  Serializer,
+  Restorer,
+  Storage,
+  Highlighter,
+  EventfulHighlighter,
+  HighlightEventData,
+  HighlightEventListener,
+} from './interfaces';
+
+// 导出高亮事件枚举
+export { HighlightEventType } from './interfaces';
+
+// 导出 API 接口类型
+export type { SelectionRestoreAPI } from './api';

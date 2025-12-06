@@ -16,7 +16,7 @@ import type {
   HighlightStyle,
   SelectionTypeConfig,
 } from './options';
-import type { SelectionInteractionEvent } from './events';
+import type { SelectionInteractionEvent, SelectionInstance } from './events';
 
 // 主要API接口（无状态设计）
 export interface SelectionRestoreAPI {
@@ -69,18 +69,23 @@ export interface SelectionRestoreAPI {
   subscribeToDebugLogs(callback: (entry: DebugLogEntry) => void): () => void;
   /** 导出调试日志 */
   exportDebugLogs(): string;
-  /** 根据文本高亮指定容器中的所有匹配文本 */
+  /**
+   * 根据文本高亮指定容器中的所有匹配文本
+   *
+   * 注意：filterMatches 回调中的 items 类型为 SearchMatchItem[]，
+   * 详见 facade/helpers/text-highlight-manager.ts
+   */
   highlightTextInContainers(
     text: string | string[],
     type: string,
     containers: string[],
     options?: {
-      onInteraction?: (event: SelectionInteractionEvent, instance: any) => void;
+      onInteraction?: (event: SelectionInteractionEvent, instance: SelectionInstance) => void;
       caseSensitive?: boolean;
       wholeWord?: boolean;
       maxMatches?: number;
-      /** 自定义过滤函数，可用于过滤掉与已有选区重叠的匹配项 */
-      filterMatches?: (items: any[], keyword: string) => any[];
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- 回调类型需与内部实现 SearchMatchItem 兼容
+      filterMatches?: (items: unknown[], keyword: string) => unknown[];
     }
   ): Promise<{
     success: number;

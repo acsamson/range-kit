@@ -55,7 +55,7 @@ export interface InteractionEventData {
   /** 选区 ID（如果命中已保存的选区） */
   selectionId?: string;
   /** 关联的选区数据 */
-  selectionData?: any;
+  selectionData?: unknown;
 }
 
 /**
@@ -105,7 +105,7 @@ export interface IInteractionManager {
    * @param range - 选区 Range
    * @param data - 选区数据
    */
-  registerSelection(id: string, range: Range, data?: any): void;
+  registerSelection(id: string, range: Range, data?: unknown): void;
 
   /**
    * 移除选区

@@ -20,7 +20,7 @@ export interface DebugLogEntry {
   level: LogLevel;
   category: string; // 如: 'L1', 'L2', 'serializer', 'storage' 等
   message: string;
-  data?: any;
+  data?: unknown;
   duration?: number; // 操作耗时(ms)
   stackTrace?: string;
 }
@@ -68,7 +68,7 @@ class DebugLogger {
   /**
    * 记录调试信息
    */
-  log(level: LogLevel, category: string, message: string, data?: any, duration?: number): void {
+  log(level: LogLevel, category: string, message: string, data?: unknown, duration?: number): void {
     if (!this.enabled) return;
 
     // 检查日志级别是否满足最小级别要求
@@ -198,7 +198,7 @@ class DebugLogger {
   /**
    * 通知订阅者（内部使用）
    */
-  private notifySubscribers(level: LogLevel, category: string, message: string, data?: any): void {
+  private notifySubscribers(level: LogLevel, category: string, message: string, data?: unknown): void {
     const entry: DebugLogEntry = {
       id: this.generateId(),
       timestamp: Date.now(),
@@ -230,23 +230,23 @@ const createNoopLogger = () => () => {};
 const FORCE_ENABLE_DEBUG = false;
 
 export const logDebug = (IS_PRODUCTION && !FORCE_ENABLE_DEBUG) ? createNoopLogger() :
-  (category: string, message: string, data?: any, duration?: number) =>
+  (category: string, message: string, data?: unknown, duration?: number) =>
     debugLogger.log(LogLevel.DEBUG, category, message, data, duration);
 
 export const logInfo = (IS_PRODUCTION && !FORCE_ENABLE_DEBUG) ? createNoopLogger() :
-  (category: string, message: string, data?: any, duration?: number) =>
+  (category: string, message: string, data?: unknown, duration?: number) =>
     debugLogger.log(LogLevel.INFO, category, message, data, duration);
 
 export const logWarn = (IS_PRODUCTION && !FORCE_ENABLE_DEBUG) ? createNoopLogger() :
-  (category: string, message: string, data?: any, duration?: number) =>
+  (category: string, message: string, data?: unknown, duration?: number) =>
     debugLogger.log(LogLevel.WARN, category, message, data, duration);
 
 export const logError = (IS_PRODUCTION && !FORCE_ENABLE_DEBUG) ? createNoopLogger() :
-  (category: string, message: string, data?: any, duration?: number) =>
+  (category: string, message: string, data?: unknown, duration?: number) =>
     debugLogger.log(LogLevel.ERROR, category, message, data, duration);
 
 export const logSuccess = (IS_PRODUCTION && !FORCE_ENABLE_DEBUG) ? createNoopLogger() :
-  (category: string, message: string, data?: any, duration?: number) =>
+  (category: string, message: string, data?: unknown, duration?: number) =>
     debugLogger.log(LogLevel.SUCCESS, category, message, data, duration);
 
 /**
@@ -269,7 +269,7 @@ export class PerformanceTimer {
   /**
    * 结束计时并记录
    */
-  end(additionalData?: any): number {
+  end(additionalData?: unknown): number {
     if (IS_PRODUCTION) {
       return 0;
     }
@@ -292,16 +292,18 @@ export class PerformanceTimer {
  * 装饰器：自动记录方法执行时间 - 生产环境中为直通版本
  */
 export function logPerformance(category: string, description?: string) {
-  return function (target: any, propertyName: string, descriptor: PropertyDescriptor) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- TypeScript 装饰器标准模式需要 any
+  return function (target: unknown, propertyName: string, descriptor: PropertyDescriptor) {
     if (IS_PRODUCTION) {
       // 生产环境中不做任何修改，直接返回原始方法
       return descriptor;
     }
 
     const method = descriptor.value;
-    const methodDescription = description || `${target.constructor.name}.${propertyName}`;
+    const methodDescription = description || `${(target as { constructor: { name: string } }).constructor.name}.${propertyName}`;
 
-    descriptor.value = async function (...args: any[]) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- 装饰器包装器需要接受任意参数
+    descriptor.value = async function (...args: unknown[]) {
       const timer = new PerformanceTimer(category, methodDescription);
 
       try {
