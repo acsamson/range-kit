@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { useSelectionRestore, useSearchHighlight, useHighlightNavigation } from '@life2code/range-kit-react';
+import { useSelectionRestore, useSearchHighlight, useHighlightNavigation } from '@l2c/range-kit-react';
 
 function App() {
   const [searchText, setSearchText] = useState('');

@@ -1,5 +1,5 @@
 import type { Ref } from 'vue'
-import type { SerializedSelection, SelectionTypeConfig } from '@life2code/range-kit-core'
+import type { SerializedSelection, SelectionTypeConfig } from '@l2c/range-kit-core'
 import type { PopoverData, SelectionItem, UsePopoverReturn } from './use-popover'
 
 /**

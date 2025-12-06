@@ -1,10 +1,10 @@
 import {
   SelectionBehaviorType,
   type SelectionRestoreAPI
-} from '@life2code/range-kit-core'
+} from '@l2c/range-kit-core'
 import type {
   SelectionActionEvent
-} from '@life2code/range-kit-vue'
+} from '@l2c/range-kit-vue'
 import type { PopoverData, SelectionItem, UsePopoverReturn } from './use-popover'
 import type { Ref } from 'vue'
 

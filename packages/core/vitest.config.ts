@@ -31,7 +31,7 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      '@life2code/range-kit': resolve(__dirname, 'src'),
+      '@l2c/range-kit': resolve(__dirname, 'src'),
     },
   },
 });

@@ -29,13 +29,13 @@ importers:
 
   examples:
     dependencies:
-      '@life2code/range-kit-core':
+      '@l2c/range-kit-core':
         specifier: workspace:*
         version: link:../core
-      '@life2code/range-kit-react':
+      '@l2c/range-kit-react':
         specifier: workspace:*
         version: link:../react
-      '@life2code/range-kit-vue':
+      '@l2c/range-kit-vue':
         specifier: workspace:*
         version: link:../vue
       react:
@@ -66,7 +66,7 @@ importers:
 
   react:
     dependencies:
-      '@life2code/range-kit-core':
+      '@l2c/range-kit-core':
         specifier: workspace:*
         version: link:../core
     devDependencies:
@@ -88,7 +88,7 @@ importers:
 
   vue:
     dependencies:
-      '@life2code/range-kit-core':
+      '@l2c/range-kit-core':
         specifier: workspace:*
         version: link:../core
     devDependencies:

@@ -21,9 +21,9 @@
     "noFallthroughCasesInSwitch": true,
     
     "paths": {
-      "@life2code/range-kit-core": ["../packages/core/src/index.ts"],
-      "@life2code/range-kit-vue": ["../packages/vue/src/index.ts"],
-      "@life2code/range-kit-react": ["../packages/react/src/index.ts"]
+      "@l2c/range-kit-core": ["../packages/core/src/index.ts"],
+      "@l2c/range-kit-vue": ["../packages/vue/src/index.ts"],
+      "@l2c/range-kit-react": ["../packages/react/src/index.ts"]
     }
   },
   "include": ["vue-demo/**/*.ts", "vue-demo/**/*.tsx", "vue-demo/**/*.vue", "react-demo/**/*.ts", "react-demo/**/*.tsx"]

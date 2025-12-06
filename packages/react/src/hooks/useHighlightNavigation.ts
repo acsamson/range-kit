@@ -1,5 +1,5 @@
 import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
-import type { SelectionRestore } from '@life2code/range-kit-core';
+import type { SelectionRestore } from '@l2c/range-kit-core';
 
 export interface NavigableHighlight {
   id: string;

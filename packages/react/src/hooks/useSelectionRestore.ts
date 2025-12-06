@@ -10,7 +10,7 @@ import {
   type SelectionInstance,
   type SelectionHighlightStyle as HighlightStyle,
   type OverlappedRange
-} from '@life2code/range-kit-core';
+} from '@l2c/range-kit-core';
 
 export type SelectionActionType =
   | 'created'

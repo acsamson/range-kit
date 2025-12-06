@@ -1,4 +1,4 @@
-import type { SelectionHighlightStyle as HighlightStyle, SelectionTypeConfig } from '@life2code/range-kit-core'
+import type { SelectionHighlightStyle as HighlightStyle, SelectionTypeConfig } from '@l2c/range-kit-core'
 
 /**
  * 默认选区样式配置 - 浅黄色背景加深黄色下划线

@@ -4,4 +4,4 @@
  */
 
 // 直接从 SDK 层导出，保持一致性
-export { convertToSimple, convertSelectionsToSimple } from '@life2code/range-kit-core'
+export { convertToSimple, convertSelectionsToSimple } from '@l2c/range-kit-core'

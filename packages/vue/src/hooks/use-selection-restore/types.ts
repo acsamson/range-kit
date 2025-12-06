@@ -5,7 +5,7 @@ import type {
   SelectionTypeConfig,
   SelectionRestoreAPI,
   OverlappedRange
-} from '@life2code/range-kit-core'
+} from '@l2c/range-kit-core'
 
 /**
  * 选区动作类型

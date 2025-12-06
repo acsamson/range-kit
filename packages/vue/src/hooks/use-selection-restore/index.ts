@@ -9,7 +9,7 @@ import {
   type SelectionBehaviorEvent,
   type SelectionInteractionEvent,
   type SelectionInstance
-} from '@life2code/range-kit-core'
+} from '@l2c/range-kit-core'
 
 import type {
   UseSelectionRestoreOptions,

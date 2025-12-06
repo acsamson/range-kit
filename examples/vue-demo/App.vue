@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue'
-import { useSelectionRestore, useSearchHighlight, useHighlightNavigation } from '@life2code/range-kit-vue'
+import { useSelectionRestore, useSearchHighlight, useHighlightNavigation } from '@l2c/range-kit-vue'
 import SelectionPopover from './components/SelectionPopover.vue'
 import ControlPanel from './components/ControlPanel.vue'
 import SearchHighlight from './components/SearchHighlight.vue'

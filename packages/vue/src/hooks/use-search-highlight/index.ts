@@ -8,7 +8,7 @@ import type {
 } from './types'
 import { createInteractionHandler } from '../common'
 import { DEFAULT_SEARCH_HIGHLIGHT_TYPES } from './constants'
-import type { SelectionTypeConfig } from '@life2code/range-kit-core'
+import type { SelectionTypeConfig } from '@l2c/range-kit-core'
 
 // 导出类型
 export * from './types'

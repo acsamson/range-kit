@@ -1,6 +1,6 @@
 import type { Ref } from 'vue'
 import type { InteractionType, BaseInteractionEvent } from '../common'
-import type { SelectionRestoreAPI, SelectionTypeConfig, SearchMatchItem, SearchMatchFilter } from '@life2code/range-kit-core'
+import type { SelectionRestoreAPI, SelectionTypeConfig, SearchMatchItem, SearchMatchFilter } from '@l2c/range-kit-core'
 
 // 重新导出类型供外部使用
 export type { SearchMatchItem, SearchMatchFilter }

@@ -1,5 +1,5 @@
 {
-  "name": "@life2code/range-kit-vue",
+  "name": "@l2c/range-kit-vue",
   "version": "0.0.1",
   "description": "Vue bindings for Range Kit",
   "main": "./dist/index.js",
@@ -19,7 +19,7 @@
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
-    "@life2code/range-kit-core": "workspace:*"
+    "@l2c/range-kit-core": "workspace:*"
   },
   "peerDependencies": {
     "vue": "^3.3.0"

@@ -1,5 +1,5 @@
 {
-  "name": "@life2code/range-kit-examples",
+  "name": "@l2c/range-kit-examples",
   "version": "0.0.1",
   "private": true,
   "scripts": {
@@ -11,9 +11,9 @@
     "docs:preview": "vitepress preview docs"
   },
   "dependencies": {
-    "@life2code/range-kit-core": "workspace:*",
-    "@life2code/range-kit-vue": "workspace:*",
-    "@life2code/range-kit-react": "workspace:*",
+    "@l2c/range-kit-core": "workspace:*",
+    "@l2c/range-kit-vue": "workspace:*",
+    "@l2c/range-kit-react": "workspace:*",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "vue": "^3.3.0"

@@ -24,9 +24,9 @@
 
 这个项目采用 Monorepo 结构：
 
-- **`@life2code/range-kit-core`**: 核心引擎。负责 Range <-> JSON 的序列化与反序列化，以及底层的 DOM 操作。
-- **`@life2code/range-kit-react`**: 为 React 生态打造的 Hooks 封装。
-- **`@life2code/range-kit-vue`**: 为 Vue 生态打造的 Composables 封装。
+- **`@l2c/range-kit-core`**: 核心引擎。负责 Range <-> JSON 的序列化与反序列化，以及底层的 DOM 操作。
+- **`@l2c/range-kit-react`**: 为 React 生态打造的 Hooks 封装。
+- **`@l2c/range-kit-vue`**: 为 Vue 生态打造的 Composables 封装。
 
 ## 🚀 预览 (Preview)
 
@@ -35,7 +35,7 @@
 ### Core 使用
 
 ```typescript
-import { SelectionManager } from '@life2code/range-kit-core';
+import { SelectionManager } from '@l2c/range-kit-core';
 
 // 1. 初始化 (强制 ID 锚点)
 const manager = new SelectionManager('editor-root');
@@ -53,7 +53,7 @@ manager.highlight(selectionData, {
 ### React Hooks
 
 ```tsx
-import { useTextSelection } from '@life2code/range-kit-react';
+import { useTextSelection } from '@l2c/range-kit-react';
 
 function Article() {
   // 极简 API，无需关心底层 Range 对象
@@ -73,22 +73,7 @@ function Article() {
 }
 ```
 
-## 🗺️ 未来规划 (Roadmap)
 
-我们的目标是成为 Web 选区处理的事实标准。
-
-### 1. 极致的开发者体验 (DX First)
-- **React/Vue Hooks**: 开发者不需要去理解晦涩的 DOM Range API。你只需要 `useSelection()` 或 `useHighlight()`。
-- 提供开箱即用的状态管理集成示例。
-
-### 2. AI Native & RAG 场景支持
-- **引用溯源 (Citation & Source Tracing)**: 针对当前爆发的 RAG (检索增强生成) 应用，提供最佳实践方案。
-- 实现点击 AI 回复中的引用角标，自动滚动并高亮原文中的对应段落，即便原文是在复杂的文档结构中。
-
-### 3. 攻克技术痛点
-- **Complex DOM Support**: 完善对 `<iframe>` 跨域选区的支持。
-- **Shadow DOM**: 穿透 Shadow DOM 边界的选区恢复与高亮。
-- **Virtual List**: 支持虚拟滚动场景下的选区保持。
 
 ## 📄 License
 

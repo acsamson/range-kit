@@ -3,7 +3,7 @@
  */
 
 import type { Ref, ComputedRef } from 'vue'
-import type { SelectionRestore } from '@life2code/range-kit-core'
+import type { SelectionRestore } from '@l2c/range-kit-core'
 
 /**
  * 高亮项接口

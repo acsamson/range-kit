@@ -10,9 +10,9 @@ export default defineConfig({
   ],
   resolve: {
     alias: {
-      '@life2code/range-kit-core': resolve(__dirname, '../packages/core/src/index.ts'),
-      '@life2code/range-kit-vue': resolve(__dirname, '../packages/vue/src/index.ts'),
-      '@life2code/range-kit-react': resolve(__dirname, '../packages/react/src/index.ts'),
+      '@l2c/range-kit-core': resolve(__dirname, '../packages/core/src/index.ts'),
+      '@l2c/range-kit-vue': resolve(__dirname, '../packages/vue/src/index.ts'),
+      '@l2c/range-kit-react': resolve(__dirname, '../packages/react/src/index.ts'),
     }
   },
   server: {

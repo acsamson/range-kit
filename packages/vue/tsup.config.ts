@@ -5,5 +5,5 @@ export default defineConfig({
   format: ['cjs', 'esm'],
   dts: true,
   clean: true,
-  external: ['vue', '@life2code/range-kit'],
+  external: ['vue', '@l2c/range-kit'],
 });

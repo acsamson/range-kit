@@ -1,7 +1,7 @@
 import {
   UseSearchHighlightReturn,
   SearchHighlightOptions
-} from '@life2code/range-kit-vue'
+} from '@l2c/range-kit-vue'
 import type { Ref } from 'vue'
 
 export interface UseSearchActionsOptions {

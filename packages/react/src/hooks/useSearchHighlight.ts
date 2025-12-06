@@ -2,7 +2,7 @@ import { useState, useCallback } from 'react';
 import type { 
     SelectionRestore, 
     SelectionTypeConfig 
-} from '@life2code/range-kit-core';
+} from '@l2c/range-kit-core';
 
 // Duplicate types to avoid deep imports if not exported, or just define subset
 export interface SearchResultItem {

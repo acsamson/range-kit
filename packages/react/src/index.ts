@@ -16,4 +16,4 @@ export type {
   SelectionTypeConfig,
   SelectionHighlightStyle as HighlightStyle,
   SelectionBehaviorType
-} from '@life2code/range-kit-core';
+} from '@l2c/range-kit-core';

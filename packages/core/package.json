@@ -1,5 +1,5 @@
 {
-  "name": "@life2code/range-kit-core",
+  "name": "@l2c/range-kit-core",
   "version": "0.0.1",
   "description": "Range Selection and Restoration SDK",
   "main": "./dist/index.js",
