@@ -1,0 +1,210 @@
+/* Control panel container - Enterprise clean style */
+.control-panel {
+  border-radius: 8px;
+  padding: 16px;
+  border: 1px solid #e5e7eb;
+  background: #ffffff;
+  margin-bottom: 20px;
+}
+
+.control-panel .panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.control-panel .panel-title {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.control-panel .selection-count {
+  font-size: 13px;
+  color: #6b7280;
+}
+
+.control-panel .count-badge {
+  background: #f3f4f6;
+  color: #1f2937;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-weight: 600;
+  margin-left: 6px;
+  font-size: 12px;
+}
+
+/* Sidebar uses single column layout */
+.control-panel .control-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+@media (max-width: 768px) {
+  .control-panel .control-grid {
+    flex-direction: column;
+  }
+}
+
+.control-panel .control-group {
+  background: #fafafa;
+  border-radius: 6px;
+  padding: 14px;
+  border: 1px solid #e5e7eb;
+}
+
+.control-panel .group-title {
+  margin: 0 0 12px 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: #374151;
+}
+
+.control-panel .type-selector,
+.control-panel .interaction-selector {
+  margin-bottom: 0;
+}
+
+.control-panel .type-label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #374151;
+}
+
+.control-panel .type-select {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  background: white;
+  color: #1f2937;
+  font-size: 13px;
+}
+
+.control-panel .type-select:focus {
+  outline: none;
+  border-color: #6b7280;
+  box-shadow: 0 0 0 2px rgba(107, 114, 128, 0.1);
+}
+
+.control-panel .type-select option {
+  background: white;
+  color: #1f2937;
+}
+
+.control-panel .type-preview {
+  margin-top: 6px;
+  padding: 6px 10px;
+  border-radius: 4px;
+  font-size: 11px;
+  background: #f9fafb;
+  border-left: 3px solid #6b7280;
+  color: #6b7280;
+}
+
+.control-panel .button-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+/* Button base styles - Enterprise clean style */
+.control-panel .btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+  text-decoration: none;
+  background: white;
+  color: #374151;
+}
+
+.control-panel .btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.control-panel .btn-icon {
+  font-size: 16px;
+}
+
+.control-panel .btn-primary {
+  background: #ffffff;
+  color: #059669;
+  border-color: #059669;
+}
+
+.control-panel .btn-primary:hover:not(:disabled) {
+  background: #ecfdf5;
+}
+
+.control-panel .btn-success {
+  background: #ffffff;
+  color: #0284c7;
+  border-color: #0284c7;
+}
+
+.control-panel .btn-success:hover:not(:disabled) {
+  background: #f0f9ff;
+}
+
+.control-panel .btn-info {
+  background: #ffffff;
+  color: #2563eb;
+  border-color: #2563eb;
+}
+
+.control-panel .btn-info:hover:not(:disabled) {
+  background: #eff6ff;
+}
+
+.control-panel .btn-danger {
+  background: #ffffff;
+  color: #dc2626;
+  border-color: #dc2626;
+}
+
+.control-panel .btn-danger:hover:not(:disabled) {
+  background: #fef2f2;
+}
+
+.control-panel .btn-outline {
+  background: white;
+  color: #6b7280;
+  border: 1px solid #d1d5db;
+}
+
+.control-panel .btn-outline:hover:not(:disabled) {
+  background: #f9fafb;
+}
+
+/* Type preview styles - Enterprise colors */
+.control-panel .type-default {
+  border-left-color: #6b7280;
+}
+
+.control-panel .type-highlight {
+  border-left-color: #9ca3af;
+}
+
+.control-panel .type-annotation {
+  border-left-color: #6b7280;
+}
+
+.control-panel .type-bookmark {
+  border-left-color: #9ca3af;
+}
